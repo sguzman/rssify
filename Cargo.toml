@@ -3,6 +3,7 @@ members = ["crates/core", "crates/adapters/cli"]
 resolver = "2"
 
 [workspace.package]
+name = "rssify"
 version = "0.9.0"
 edition = "2024"
 license = "CC0-1.0"
