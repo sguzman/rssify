@@ -1,0 +1,7 @@
+{"name":"guid_wins","guid":"urn:guid:123","link":"https://ex.com/1","hash":"H:aaa","expect":"urn:guid:123"}
+{"name":"link_when_no_guid","guid":"","link":"https://ex.com/2","hash":"H:bbb","expect":"https://ex.com/2"}
+{"name":"hash_when_no_guid_link","guid":"","link":"","hash":"H:ccc","expect":"H:ccc"}
+{"name":"trim_inputs","guid":"  urn:guid:999  ","link":"   https://ex.com/3  ","hash":"H:ddd","expect":"urn:guid:999"}
+{"name":"ignore_whitespace_link_if_guid_present","guid":"guid:abc","link":"   ","hash":"H:eee","expect":"guid:abc"}
+{"name":"ignore_whitespace_guid_link_uses_hash","guid":"   ","link":"   ","hash":"H:fff","expect":"H:fff"}
+

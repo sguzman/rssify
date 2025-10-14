@@ -22,3 +22,4 @@ pub use ids::*;
 pub use model::*;
 pub use repo::*;
 pub use sched::*;
+pub mod id_policy; // re-export so tests can `use rssify_core::id_policy::choose_id;`
