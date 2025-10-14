@@ -71,7 +71,15 @@ fn main() {
 }
 
 fn run(_cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
+    // TODO(phase1): wire Command::Fetch to:
+    // - parse feeds.json into Vec<FeedSeed>
+    // - for each seed: fetch -> parse -> persist_fs
+    // - aggregate PersistStats; if --json, print a JSON summary
+    // TODO(phase1): wire Command::Stats to read fs:<root> and count entries
+    // TODO(phase1): wire Command::Import and Command::Add to update feeds.json
     Ok(())
 }
 
+pub mod pipeline;
+pub mod repo_fs;
 pub mod spec;
