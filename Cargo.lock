@@ -148,7 +148,7 @@ dependencies = [
 
 [[package]]
 name = "rssify-cli"
-version = "0.8.2"
+version = "0.8.3"
 dependencies = [
  "clap",
  "rssify-core",
@@ -159,7 +159,7 @@ dependencies = [
 
 [[package]]
 name = "rssify-core"
-version = "0.8.2"
+version = "0.8.3"
 dependencies = [
  "clap",
  "serde",
