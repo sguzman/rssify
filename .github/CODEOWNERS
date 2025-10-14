@@ -1,0 +1,6 @@
+# Core contracts and pure logic
+/crates/core/  @sguzman
+
+# CLI adapter and repos
+/crates/adapters/  @sguzman
+

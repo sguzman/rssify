@@ -25,6 +25,6 @@ Rules:
 - Keep arguments stable; changes require a migration note.
 
 Repo specs:
-- --store expects a string conforming to docs/REPOSITORIES.md (e.g., fs:/path, sqlite:/path.db).
-- The CLI only parses/validates the spec; actual repository behavior is implemented later.
+- --store must follow docs/REPOSITORIES.md, e.g. fs:/path or sqlite:/path.db.
+- The CLI only parses/validates; actual backend behavior is implemented separately.
 

@@ -365,3 +365,8 @@ clap = { version = "4", features = ["derive"] }
 * Always include a one-line Conventional Commit suggestion with any code/doc proposal.”
 * Prefer latest compatible, working crate versions; if newest breaks, pin to latest working and note the failure.”
 
+## Additional global rules for agents
+
+- Use the latest working versions of Rust packages (verify in CI).
+- After proposing any code or doc edits, ALWAYS include a SemVer-style commit message suggestion.
+

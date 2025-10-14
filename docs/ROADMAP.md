@@ -90,3 +90,8 @@ Subgoals:
 - Tunable learning scheduler with persisted priors and aging.
 - Thorough docs: README quickstart, ARCHITECTURE design, CONTRIBUTING contracts, AI-FRIENDLY rules, example feeds.json and config.
 
+
+### Phase 1 linkage
+
+See docs/PHASE1_SCOPE.md for the exact MVP behaviors and non-goals.
+

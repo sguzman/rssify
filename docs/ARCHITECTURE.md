@@ -544,3 +544,14 @@ Atom -> normalized:
 * [ ] Metrics + logs + sample raw retention
 * [ ] Minimal REST + NDJSON tap
 * [ ] Backfill queue and archive handling
+
+## Contracts index
+
+- IDs: see docs/ID_POLICY.md and `crates/core/src/ids.rs`
+- Domain records: `crates/core/src/model.rs`
+- Errors: `crates/core/src/error.rs`
+- Repositories: `crates/core/src/repo.rs`
+- Scheduler: see docs/SCHEDULER.md and `crates/core/src/sched.rs`
+- CLI surface: see docs/CLI_SURFACE.md (no business logic)
+- Repository selection: see docs/REPOSITORIES.md
+

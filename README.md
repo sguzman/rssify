@@ -137,3 +137,16 @@ See docs/AI-FRIENDLY.md for global rules and docs/CONTRIBUTING.md for repo-speci
 
 This README follows your AI-friendly iteration and repo conventions so agents can implement or edit one file at a time with minimal context and fast convergence through tests. 
 
+## Documentation index
+
+- docs/CONTRIBUTING.md — how to work on this repo; preflight checks and PR scope
+- docs/AI-FRIENDLY.md — global authoring rules for humans and AIs
+- docs/ARCHITECTURE.md — boundaries: pure core vs impure adapters
+- docs/ROADMAP.md — phased plan; each phase leaves a working state
+- docs/PHASE1_SCOPE.md — MVP behaviors for fetch + persist
+- docs/ID_POLICY.md — stable FeedId / EntryId rules (GUID > link > hash)
+- docs/SCHEDULER.md — scheduler inputs/outputs contract (no logic)
+- docs/CLI_SURFACE.md — subcommands and flags (adapter only)
+- docs/REPOSITORIES.md — repo selection surface (fs:/..., sqlite:/...)
+- docs/LOG_KEYS.md — canonical structured logging keys
+

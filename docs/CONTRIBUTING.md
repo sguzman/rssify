@@ -261,3 +261,48 @@ CI runs:
 
 Questions or proposals? Open a GitHub Discussion or a draft PR with a short design note. Thanks for helping keep this codebase clean, deterministic, and friendly to both humans and AI.
 
+
+## 0. Read this first
+
+This project enforces the global rules in docs/AI-FRIENDLY.md (small public APIs, one-concept-per-file, depth <= 3, required file header, file size guidance, structured logs, injected time/RNG, etc.). Adapters must not contain business logic.
+
+## 1. Preflight before pushing
+
+Run all checks locally:
+
+    just check
+
+This runs:
+- header check
+- LOC guard (warn > 200, error >= 300, header/tests excluded)
+- fmt, clippy -D warnings
+- build and tests for the whole workspace
+
+## 2. PR scope rules
+
+- Keep PRs small and cohesive (one concept per file).
+- Pure core only defines types/traits and deterministic logic.
+- All I/O and side effects live in adapters/backends.
+- CLI parses args and delegates; it does not implement business logic.
+
+## 3. Versioning, releases, and commit style
+
+- Use SemVer tags via the existing release tooling.
+- Conventional commits are encouraged.
+- When you propose code or doc edits, include a SemVer-style commit suggestion in your message, e.g.:
+  - feat(core): add ids policy helper
+  - fix(cli): handle empty --store with clear error
+  - docs: expand Phase-1 scope with metrics section
+
+## 4. Dependencies policy (Rust)
+
+- Prefer the latest working versions that compile in CI across Linux targets.
+- Avoid adding a crate unless it removes meaningful code or risk.
+- Any dependency that touches parsing/networking/storage must be documented in ARCHITECTURE.md with its boundary.
+
+## 5. Tests layout
+
+- Unit tests live alongside modules.
+- Golden/property/integration tests live under `crates/*/tests/`.
+- Golden tests use `tests/testdata/` fixtures and are stable by design.
+
