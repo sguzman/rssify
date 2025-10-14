@@ -1,5 +1,9 @@
 # AI-friendly Rust Development Guide
 
+## Scope
+
+This file is global guidance for AI/human contributors across repos; project-specific rules live in CONTRIBUTING.md
+
 This guide defines an iteration loop and repo/file conventions that make AI agents reliable at generating or editing one file at a time, with fast convergence through tests.
 
 ## Goals
@@ -8,6 +12,17 @@ This guide defines an iteration loop and repo/file conventions that make AI agen
 * Keep changes localized to one file at a time.
 * Make seams explicit so agents can implement behind traits.
 * Ensure every change is validated by runnable tests.
+
+---
+
+## Global File & API Rules
+- File caps: aim for 100–200 LOC per file; refactor when ~300 LOC. Do not split cohesive logic just to hit a number.
+- One concept per file; name files after the noun or verb they implement.
+- No deep trees: max module depth of 3.
+- Keep public APIs tiny; re-export types at the crate root.
+- Error types: one error enum per boundary with stable, documented variants.
+- Logging: structured logs with a stable set of keys; no println.
+- Time and randomness are injected via traits so tests can control them.
 
 ---
 
@@ -338,3 +353,12 @@ clap = { version = "4", features = ["derive"] }
 * Run tests: `cargo test -q`
 * Format: `cargo fmt --all`
 * Lints: `cargo clippy --all-targets -- -D warnings`
+
+
+---
+
+## Global hard rules
+
+* Always include a one-line Conventional Commit suggestion with any code/doc proposal.”
+* Prefer latest compatible, working crate versions; if newest breaks, pin to latest working and note the failure.”
+

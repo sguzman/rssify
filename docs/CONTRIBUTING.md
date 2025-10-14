@@ -32,17 +32,12 @@ Rules:
 * `adapters/*` may do I/O but must speak only via core traits and types.
 * `repos/*` implement the repository trait only; they contain no business logic.
 
+
 ## 3. AI-friendly authoring rules
-
-These rules make files easy to generate, review, and test.
-
-* File caps: aim for 60–120 LOC per file. Do not split cohesive logic just to hit a number; prefer clarity. If a unit exceeds ~200 LOC, consider refactoring.
-* One concept per file. Name files after the noun or verb they implement.
-* No deep trees. Max module depth of 3.
-* Keep public APIs tiny. Re-export types at the crate root.
-* Error types: one error enum per boundary, with stable, documented variants.
-* Logging: structured logs with a stable set of keys. No println.
-* Time and randomness are injected via traits so tests can control them.
+We follow the global rules in [AI-FRIENDLY.md — Global File & API Rules](./AI-FRIENDLY.md#global-file-and-api-rules). This repo ENFORCES:
+- Required file header (CI fails if missing)
+- Size check: warn above 200 LOC (excluding header/tests)
+- Structured logging keys per component
 
 ### 3.1 Required file header
 
