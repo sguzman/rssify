@@ -15,10 +15,6 @@
     if libs ? run
     then libs.run
     else [];
-  pkgLibs =
-    if libs ? pkg
-    then libs.pkg
-    else [];
   buildLibs =
     if libs ? build
     then libs.build
@@ -29,7 +25,6 @@
     else [];
 
   runSummary = builtins.concatStringsSep "\n" (map fmt runLibs);
-  pkgSummary = builtins.concatStringsSep "\n" (map fmt pkgLibs);
   buildSummary = builtins.concatStringsSep "\n" (map fmt buildLibs);
   devSummary = builtins.concatStringsSep "\n" (map fmt devLibs);
 
@@ -40,17 +35,6 @@
             set_color brwhite; echo "  runtime libs:"; set_color normal
             set_color cyan
       ${runSummary}
-            set_color normal
-            echo
-    '';
-
-  pkgBlock =
-    if pkgLibs == []
-    then ""
-    else ''
-            set_color brwhite; echo "  pkg-config libs:"; set_color normal
-            set_color magenta
-      ${pkgSummary}
             set_color normal
             echo
     '';
@@ -95,7 +79,7 @@
 
           # Libraries (auto-generated from Nix)
           set_color brwhite; echo; echo "Libraries (from Nix):"; set_color normal
-    ${runBlock}${pkgBlock}${buildBlock}${devBlock}
+    ${runBlock}${buildBlock}${devBlock}
 
           # Environment (exported variables)
           set_color brwhite; echo "Environment:"; set_color normal

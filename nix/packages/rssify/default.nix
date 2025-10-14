@@ -44,7 +44,7 @@ in
 
     nativeBuildInputs = libs.build;
 
-    buildInputs = libs.pkg;
+    buildInputs = libs.run;
 
     postInstall = ''
       if [ -d "$out/bin" ]; then

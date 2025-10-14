@@ -26,7 +26,7 @@
     OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
     OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
     OPENSSL_NO_VENDOR = "1";
-    PKG_CONFIG_PATH = mkPkg libs.pkg;
+    PKG_CONFIG_PATH = mkPkg libs.run;
     RUSTFLAGS = "-C link-arg=-Wl,-rpath,${pkgs.openssl.out}/lib";
     RUST_SRC_PATH = "${toolchain}/lib/rustlib/src/rust";
     SCCACHE_DISABLE = "0";

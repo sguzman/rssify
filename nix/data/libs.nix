@@ -3,9 +3,6 @@
   inputs,
 }: let
   libs = {
-    pkg = import ./libs/pkg.nix {
-      inherit pkgs;
-    };
     dev = import ./libs/dev.nix {
       inherit pkgs inputs;
     };
