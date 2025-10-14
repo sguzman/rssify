@@ -59,3 +59,14 @@ lto = "off"         # keep off in dev for speed
 codegen-units = 1
 lto = "thin"      # combine with mold/clang for faster release links
 opt-level = 3
+
+# -----------------------------
+# Workspace (added)
+# -----------------------------
+[workspace]
+members = ["crates/core", "crates/adapters/cli", "crates/adapters/http"]
+resolver = "2"
+
+[workspace.package]
+# Match the root package edition to keep members consistent.
+edition = "2024"
