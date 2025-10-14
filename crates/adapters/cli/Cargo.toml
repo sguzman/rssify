@@ -8,7 +8,7 @@ license = "CC0-1.0"
 name = "rssify"
 readme = "../../../README.md"
 repository = "https://github.com/sguzman/rssify"
-version = "0.3.2"
+version = "0.3.3"
 
 [dependencies]
 clap = { workspace = true }
