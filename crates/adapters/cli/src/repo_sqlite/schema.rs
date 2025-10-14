@@ -1,3 +1,11 @@
+/*
+Module: repo_sqlite::schema
+Purpose: Create/init minimal tables and indexes for SQLite.
+Public API: init_schema(conn)
+Invariants: FK ON; JSON payloads; TEXT ids.
+Notes: Schema-only; no business logic.
+*/
+
 #![forbid(unsafe_code)]
 
 use rssify_core::RepoError;

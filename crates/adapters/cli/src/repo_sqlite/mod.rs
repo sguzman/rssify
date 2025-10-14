@@ -1,3 +1,11 @@
+/*
+Module: repo_sqlite::mod
+Purpose: Tiny entry for SQLite adapter; open repo and start tx.
+Public API: SqliteRepo::open, SqliteRepo::begin_tx, SqliteTx::commit
+Invariants: Connection owned here; Tx does not leak rusqlite types.
+Notes: Keep file small; business logic lives in sibling modules.
+*/
+
 #![forbid(unsafe_code)]
 
 use crate::repo_sqlite::schema::init_schema;

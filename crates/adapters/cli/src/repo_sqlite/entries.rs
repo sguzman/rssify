@@ -1,9 +1,17 @@
+/*
+Module: repo_sqlite::entries
+Purpose: EntryRepo impl on SQLite (get, upsert, list_by_feed).
+Public API: EntryRepo for SqliteRepo
+Invariants: entries.feed_id references feeds(id); JSON payload.
+Notes: Ensure feed row exists before upsert; idempotent upserts.
+*/
+
 #![forbid(unsafe_code)]
 
 use crate::repo_sqlite::{Ctx, SqliteRepo, SqliteTx};
 use rssify_core::{Entry, EntryId, EntryRepo, Feed, FeedId, RepoError};
-use rusqlite::params;
 use rusqlite::OptionalExtension;
+use rusqlite::params;
 use serde_json::{from_str as json_from, to_string as json_to};
 
 impl EntryRepo for SqliteRepo {

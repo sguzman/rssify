@@ -1,3 +1,10 @@
+/*
+Module: tests::repo_sqlite_roundtrip
+Purpose: Integration tests for SQLite adapter public surface.
+Scope: feed roundtrip, entry upsert, schedule ts, tx visibility.
+Notes: Uses :memory: DSN; no fixtures on disk.
+*/
+
 #![forbid(unsafe_code)]
 
 use rssify_cli::repo_sqlite::SqliteRepo;

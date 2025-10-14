@@ -1,9 +1,17 @@
+/*
+Module: repo_sqlite::feeds
+Purpose: FeedRepo impl on SQLite (get, put, list).
+Public API: FeedRepo for SqliteRepo
+Invariants: id is TEXT key; payload is serde JSON.
+Notes: Use OptionalExtension; keep queries explicit.
+*/
+
 #![forbid(unsafe_code)]
 
 use crate::repo_sqlite::{Ctx, SqliteRepo, SqliteTx};
 use rssify_core::{Feed, FeedId, FeedRepo, RepoError};
-use rusqlite::params;
 use rusqlite::OptionalExtension;
+use rusqlite::params;
 use serde_json::{from_str as json_from, to_string as json_to};
 
 impl FeedRepo for SqliteRepo {

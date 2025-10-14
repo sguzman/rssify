@@ -1,9 +1,17 @@
+/*
+Module: repo_sqlite::schedule
+Purpose: ScheduleRepo impl on SQLite (read/write last_ok_fetch_ts).
+Public API: ScheduleRepo for SqliteRepo
+Invariants: one row per feed_id; ts is INTEGER unix seconds.
+Notes: Minimal surface; errors bubble as RepoError.
+*/
+
 #![forbid(unsafe_code)]
 
 use crate::repo_sqlite::{Ctx, SqliteRepo, SqliteTx};
 use rssify_core::{FeedId, RepoError, ScheduleRepo};
-use rusqlite::params;
 use rusqlite::OptionalExtension;
+use rusqlite::params;
 
 impl ScheduleRepo for SqliteRepo {
     type Tx<'a>
