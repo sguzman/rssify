@@ -3,6 +3,7 @@
 use crate::repo_sqlite::{Ctx, SqliteRepo, SqliteTx};
 use rssify_core::{Entry, EntryId, EntryRepo, Feed, FeedId, RepoError};
 use rusqlite::params;
+use rusqlite::OptionalExtension;
 use serde_json::{from_str as json_from, to_string as json_to};
 
 impl EntryRepo for SqliteRepo {

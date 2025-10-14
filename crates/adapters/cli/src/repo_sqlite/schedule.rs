@@ -3,6 +3,7 @@
 use crate::repo_sqlite::{Ctx, SqliteRepo, SqliteTx};
 use rssify_core::{FeedId, RepoError, ScheduleRepo};
 use rusqlite::params;
+use rusqlite::OptionalExtension;
 
 impl ScheduleRepo for SqliteRepo {
     type Tx<'a>

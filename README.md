@@ -77,6 +77,16 @@ The binary `rssify` exposes subcommands. Each subcommand is small and operates o
 * serve: start a tiny HTTP API for read-only access to items and derivations; optionally start in-process cron jobs driven by feed-level or global schedules.
 * export: emit derived stats (JSON or CSV) for analysis elsewhere.
 
+```
+--repo selects the storage backend. Defaults to 'fs:./data'. Examples:
+- --repo fs:./data
+- --repo sqlite::memory:
+- --repo sqlite:/var/lib/rssify/data.db
+```
+
+You can also set RSSIFY_REPO=sqlite::memory: for convenience.
+
+
 Contribution style for the CLI:
 
 * Prefer one-file changes per subcommand.
