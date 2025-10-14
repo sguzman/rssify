@@ -1,0 +1,12 @@
+[package]
+name = "rssify"
+version = "0.1.0"
+edition = "2024"
+license = "CC0-1.0"
+description = "RSS toolkit CLI"
+
+[dependencies]
+clap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+rssify-core = { path = "../../core" }

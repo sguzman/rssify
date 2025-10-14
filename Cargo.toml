@@ -64,8 +64,39 @@ opt-level = 3
 # Workspace (added)
 # -----------------------------
 [workspace]
-members = []
+members = ["crates/core", "crates/adapters/cli"]
 resolver = "2"
 
 [workspace.package]
 edition = "2024"
+license = "CC0-1.0"
+
+# Keep your release config at the workspace root
+[workspace.metadata.release]
+shared-version = true
+dependent-version = "upgrade"
+allow-branch = ["main"]
+tag-name = "v{{version}}"
+tag-message = "chore(release): v{{version}}"
+pre-release-commit-message = "chore(release): {{version}}"
+consolidate-commits = true
+push = false
+publish = false
+sign-tag = false
+pre-release-hook = ["sh", "-c", '''
+  set -e
+  prev="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+  if [ -n "$prev" ]; then
+    git-cliff --tag "v{{version}}" -o CHANGELOG.md
+  else
+    git-cliff --tag "v{{version}}" -o CHANGELOG.md
+  fi
+  git add CHANGELOG.md
+  git commit --amend --no-edit
+''']
+
+[workspace.dependencies]
+thiserror = "1"
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
