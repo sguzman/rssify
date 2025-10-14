@@ -1,4 +1,9 @@
 # crates/adapters/cli/Cargo.toml
+
+[[bin]]
+name = "rssify"
+path = "src/main.rs"
+
 [package]
 name = "rssify-cli"
 version.workspace = true
