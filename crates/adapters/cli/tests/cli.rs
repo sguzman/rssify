@@ -7,25 +7,14 @@ Logging keys used: component, op, feed_id, elapsed_ms, items
 Notes: Test files may exceed header rules; scripts skip /tests/.
 */
 
-use clap::Parser;
-
-// Reuse the CLI types directly from the binary crate.
 #[path = "../src/main.rs"]
 mod bin_main;
 
-use bin_main::{Cli, Command};
-
-fn parse_ok<I, S>(iter: I) -> Cli
-where
-    I: IntoIterator<Item = S>,
-    S: Into<std::ffi::OsString> + Clone,
-{
-    Cli::parse_from(iter)
-}
+use bin_main::{Command, parse_from};
 
 #[test]
 fn parses_fetch_with_flags() {
-    let cli = parse_ok([
+    let cli = parse_from([
         "rssify",
         "fetch",
         "--from",
@@ -53,7 +42,7 @@ fn parses_fetch_with_flags() {
 
 #[test]
 fn parses_stats_minimal() {
-    let cli = parse_ok(["rssify", "stats"]);
+    let cli = parse_from(["rssify", "stats"]);
     match cli.command {
         Command::Stats { json, .. } => assert!(!json),
         _ => panic!("expected stats"),
@@ -62,7 +51,7 @@ fn parses_stats_minimal() {
 
 #[test]
 fn parses_import_and_add() {
-    let cli = parse_ok([
+    let cli = parse_from([
         "rssify",
         "import",
         "--file",
@@ -80,7 +69,7 @@ fn parses_import_and_add() {
         _ => panic!("expected import"),
     }
 
-    let cli = parse_ok([
+    let cli = parse_from([
         "rssify",
         "add",
         "https://ex.com/feed",
