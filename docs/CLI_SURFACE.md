@@ -24,3 +24,7 @@ Rules:
 - It parses args, constructs typed requests, and calls core traits (future steps).
 - Keep arguments stable; changes require a migration note.
 
+Repo specs:
+- --store expects a string conforming to docs/REPOSITORIES.md (e.g., fs:/path, sqlite:/path.db).
+- The CLI only parses/validates the spec; actual repository behavior is implemented later.
+

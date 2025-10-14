@@ -73,3 +73,5 @@ fn main() {
 fn run(_cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
+
+pub mod spec;
