@@ -7,7 +7,9 @@ use rssify_core::{
 
 #[test]
 fn feed_roundtrip_put_get_list() {
-    let r = SqliteRepo::open(":memory:").unwrap();
+    let mut r = SqliteRepo::open(":memory:").unwrap();
+    let mut tx = r.begin_tx().unwrap();
+
     let f = Feed {
         id: FeedId::from_url("https://ex.com/feed"),
         url: "https://ex.com/feed".into(),

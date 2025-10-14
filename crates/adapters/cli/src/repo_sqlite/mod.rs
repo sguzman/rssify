@@ -24,7 +24,7 @@ impl SqliteRepo {
     }
 
     /// Begin a transaction.
-    pub fn begin_tx(&self) -> Result<SqliteTx<'_>, RepoError> {
+    pub fn begin_tx(&mut self) -> Result<SqliteTx<'_>, RepoError> {
         let tx = self
             .conn
             .transaction()
