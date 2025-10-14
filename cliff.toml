@@ -2,16 +2,13 @@
 
 [changelog]
 header = "# Changelog\n\n"
-# Render only non-empty sections; show breaking first, then feature/fix/etc
 body = """
 ## {{ version | default(value="Unreleased") }} - {{ now() | date(format="%Y-%m-%d") }}
 
 {% if sections["⚠️ Breaking Changes"] %}
 ### ⚠️ Breaking Changes
 {% for commit in sections["⚠️ Breaking Changes"] %}
-- {{ commit.message | split(pat="\\n") | first }}
-  ({{ commit.scope | default(value="") | trim }}{{ " " if commit.scope }})
-  [{{ commit.id | truncate(length=7, end="") }}]({{ commit.link }})
+- {% if commit.scope %}({{ commit.scope | trim }}) {% endif %}{{ commit.message | split(pat="\\n") | first }} [{{ commit.id | truncate(length=7) }}]({{ commit.link }})
 {% endfor %}
 {% endif %}
 
@@ -19,20 +16,16 @@ body = """
 {% if sections[section] %}
 ### {{ section }}
 {% for commit in sections[section] %}
-- {{ commit.message | split(pat="\\n") | first }}
-  ({{ commit.scope | default(value="") | trim }}{{ " " if commit.scope }})
-  [{{ commit.id | truncate(length=7, end="") }}]({{ commit.link }})
+- {% if commit.scope %}({{ commit.scope | trim }}) {% endif %}{{ commit.message | split(pat="\\n") | first }} [{{ commit.id | truncate(length=7) }}]({{ commit.link }})
 {% endfor %}
 {% endif %}
 {% endfor %}
 """
 
-# Add a compare link when not the first tag
 footer = """
 {% if previous.version and version %}
 [Compare changes]({{ remote.link }}/compare/v{{ previous.version }}...v{{ version }})
 {% endif %}
-
 """
 
 # --- Git extraction behavior -------------------------------------------------
