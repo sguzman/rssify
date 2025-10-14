@@ -122,6 +122,15 @@ You can attach optional labels and per-feed cron expressions. If you run `serve`
 
 Contributing? See [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for repo rules; see AI-FRIENDLY.md for AI/human iteration practices
 
+See docs/AI-FRIENDLY.md for global rules and docs/CONTRIBUTING.md for repo-specific guidance and CI-enforced checks.
+
+### Global Rules
+
+[AI-FRIENDLY](./docs/AI-FRIENDLY.md)
+
+### Repo Specific Rules
+[CONTRIBUTING.md](./docs/CONTRIBUTING.md)
+
 ---
 
 ### Provenance

@@ -1,5 +1,8 @@
 # AI-friendly Rust Development Guide
 
+> Authority
+AI-FRIENDLY.md is the single source of truth for global, cross-repo rules. Any repo-specific exceptions or additions must be documented in CONTRIBUTING.md for that repo and take effect only if they do not conflict with this document.
+
 ## Scope
 
 This file is global guidance for AI/human contributors across repos; project-specific rules live in CONTRIBUTING.md

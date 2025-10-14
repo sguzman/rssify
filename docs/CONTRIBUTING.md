@@ -10,6 +10,10 @@ Welcome! This document explains how to contribute clean, testable code to this p
 * Observability first. Every decision is explainable via logs, metrics, traces.
 * Backwards compatibility. Schema and output changes are versioned explicitly.
 
+### 1.1 Rationale
+
+Rationale and dataflow for these contracts live in [ARCHITECTURE.md](./ARCHITECTURE.md); read alongside this doc when implementing or reviewing.
+
 ## 2. Workspace layout
 
 We maintain strict boundaries. Adapters depend on `core`, never on each other.
