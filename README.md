@@ -118,6 +118,12 @@ You can attach optional labels and per-feed cron expressions. If you run `serve`
 
 ---
 
+## Contributing
+
+Contributing? See [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for repo rules; see AI-FRIENDLY.md for AI/human iteration practices
+
+---
+
 ### Provenance
 
 This README follows your AI-friendly iteration and repo conventions so agents can implement or edit one file at a time with minimal context and fast convergence through tests. 
