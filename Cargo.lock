@@ -147,19 +147,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "rssify"
+name = "rssify-cli"
 version = "0.3.3"
 dependencies = [
  "clap",
  "rssify-core",
  "serde",
  "serde_json",
+ "thiserror",
 ]
 
 [[package]]
 name = "rssify-core"
 version = "0.3.3"
 dependencies = [
+ "clap",
  "serde",
  "serde_json",
  "thiserror",

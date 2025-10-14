@@ -1,6 +1,6 @@
 # crates/adapters/cli/Cargo.toml
 [package]
-name = "rssify"
+name = "rssify-cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
