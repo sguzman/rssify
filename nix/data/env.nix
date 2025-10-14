@@ -2,7 +2,9 @@
   pkgs,
   inputs,
 }: let
-  rust = import ../conf/rust.nix;
+  rust = import ../conf/rust.nix {
+    inherit inputs;
+  };
   pkgs' = import inputs.nixpkgs {
     system = pkgs.system;
     overlays = [inputs.rust-overlay.overlays.default];

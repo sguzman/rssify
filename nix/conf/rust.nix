@@ -1,5 +1,5 @@
-{flake}: let
-  cargoToml = builtins.fromTOML (builtins.readFile (flake + "/Cargo.toml"));
+{inputs}: let
+  cargoToml = builtins.fromTOML (builtins.readFile (inputs.self + "/rust-toolchain.toml"));
   version = cargoToml.toolchain.channel;
 in
   version
