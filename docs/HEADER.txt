@@ -1,0 +1,9 @@
+/*
+Module: <crate::path::to::module>
+Purpose: <one sentence about what this file does>
+Public API surface: <fn/types that are pub, if any>
+Invariants: <key invariants or assumptions this file maintains>
+Logging keys used: component, op, feed_id, elapsed_ms, items
+Notes: Keep file <= 200 LOC if possible; refactor at 300.
+*/
+
