@@ -27,7 +27,7 @@ struct Cli {
 }
 
 #[derive(clap::Subcommand, Debug)]
-enum Command {
+pub enum Command {
     Fetch {
         // add flags as needed later, kept minimal for compile
     },
@@ -45,6 +45,15 @@ fn main() -> ExitCode {
             ExitCode::from(1)
         }
     }
+}
+
+/// Test-helper: parse CLI from an iterator (used by integration tests)
+pub fn parse_from<I, T>(iter: I) -> Result<Cli, clap::error::Error>
+where
+    I: IntoIterator<Item = T>,
+    T: Into<std::ffi::OsString> + Clone,
+{
+    Cli::try_parse_from(iter)
 }
 
 fn run(cli: Cli) -> Result<(), RepoError> {

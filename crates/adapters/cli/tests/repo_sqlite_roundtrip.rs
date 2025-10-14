@@ -27,7 +27,8 @@ fn feed_roundtrip_put_get_list() {
         active: true,
     };
     r.put(None, &f).unwrap();
-    let out = r.get(None, &f.id).unwrap();
+    let out = rssify_core::FeedRepo::get(&r, None, &f.id).unwrap();
+
     assert_eq!(out.id.as_str(), f.id.as_str());
     assert_eq!(out.title, Some("Example".into()));
     assert!(!r.list(None).unwrap().is_empty());
@@ -66,7 +67,8 @@ fn entry_roundtrip_upsert_get_list() {
     };
     r.upsert(None, &e).unwrap();
 
-    let out = r.get(None, &e.id).unwrap();
+    let out = rssify_core::EntryRepo::get(&r, None, &e.id).unwrap();
+
     assert_eq!(out.id.as_str(), e.id.as_str());
     assert_eq!(out.feed.as_str(), feed.as_str());
     assert_eq!(r.list_by_feed(None, &feed).unwrap().len(), 1);
@@ -87,7 +89,7 @@ fn schedule_roundtrip_and_tx() {
     let mut tx = r.begin_tx().unwrap();
     r.put(Some(&tx), &f).unwrap();
     tx.commit().unwrap();
-    assert!(r.get(None, &f.id).is_ok());
+    assert!(rssify_core::FeedRepo::get(&r, None, &f.id).is_ok());
 
     let feed = FeedId::from_url("https://ex.com/feed");
     assert_eq!(r.last_ok_fetch_ts(None, &feed).unwrap(), None);
