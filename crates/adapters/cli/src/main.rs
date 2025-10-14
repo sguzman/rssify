@@ -1,132 +1,90 @@
-// Contract:
-// Purpose: Provide the rssify CLI with subcommands that call core trait seams.
-// Inputs/Outputs: Parse CLI args; delegate to implementations (stubbed for now).
-// Invariants: CLI returns non-zero exit on error; logs are concise.
-// Examples: `rssify fetch --feeds feeds.json --out data/`
-// Task: Keep under 300 LOC; split subcommands if they grow.
-// Tests: CLI parsing tests included; behavior tests to follow when impls land.
+/*
+Module: rssify_cli::main
+Purpose: Minimal CLI skeleton for subcommand parsing; no business logic or I/O
+Public API surface: binary entrypoint only
+Invariants: Adapters must not contain business logic; they call into core traits
+Logging keys used: component, op, feed_id, elapsed_ms, items
+Notes: Keep file <= 200 LOC if possible; refactor at 300.
+*/
+
+#![forbid(unsafe_code)]
+#![deny(clippy::all, clippy::pedantic)]
+#![allow(clippy::module_name_repetitions)]
 
 use clap::{Parser, Subcommand};
-use rssify_core::*;
 
-#[derive(Parser)]
+/// rssify - RSS toolkit (CLI adapter)
+#[derive(Debug, Parser)]
 #[command(name = "rssify", version, about = "RSS toolkit CLI")]
 struct Cli {
     #[command(subcommand)]
-    cmd: Commands,
+    command: Command,
 }
 
-#[derive(Subcommand)]
-enum Commands {
-    /// Read feeds.json, fetch and extract items, persist artifacts and records.
+#[derive(Debug, Subcommand)]
+enum Command {
+    /// Fetch feeds and persist results (scope defined in core/contracts)
     Fetch {
-        #[arg(long, default_value = "feeds.json")]
-        feeds: String,
-        #[arg(long, default_value = "data")]
-        out: String,
+        /// Path to feeds.json (source of truth for Phase 1)
         #[arg(long)]
-        verbose: bool,
-    },
-    /// Import newline-delimited URLs and append to the fat JSON without network I/O.
-    Import {
+        from: Option<String>,
+        /// Destination repo spec, e.g. "fs:/path"
         #[arg(long)]
-        input: String,
-        #[arg(long, default_value = "data")]
-        out: String,
-    },
-    /// Add a single URL (optionally fetch immediately).
-    Add {
-        url: String,
+        store: Option<String>,
+        /// Emit JSON to stdout
         #[arg(long)]
-        fetch: bool,
-        #[arg(long, default_value = "data")]
-        out: String,
+        json: bool,
+        /// Increase verbosity
+        #[arg(short, long, action = clap::ArgAction::Count)]
+        verbose: u8,
     },
-    /// Compute and print basic stats.
+
+    /// Compute and print simple statistics (placeholder)
     Stats {
-        #[arg(long, default_value = "data")]
-        data: String,
-    },
-    /// Serve an HTTP API (and optional in-process scheduler).
-    Serve {
-        #[arg(long, default_value = "127.0.0.1:8080")]
-        addr: String,
+        /// Repo spec to read from
         #[arg(long)]
-        scheduler: bool,
-        #[arg(long, default_value = "feeds.json")]
-        feeds: String,
+        store: Option<String>,
+        /// Emit JSON to stdout
+        #[arg(long)]
+        json: bool,
     },
-    /// Export derived stats.
-    Export {
-        #[arg(long, default_value = "data")]
-        data: String,
-        #[arg(long, default_value = "out.json")]
-        out: String,
+
+    /// Import URLs from a list into feeds.json (placeholder)
+    Import {
+        /// Path to a newline-delimited URLs file
+        #[arg(long)]
+        file: Option<String>,
+        /// Output feeds.json path
+        #[arg(long)]
+        out: Option<String>,
+        /// Emit JSON to stdout
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Add a single URL to feeds.json (placeholder)
+    Add {
+        /// Feed URL to add
+        url: String,
+        /// Output feeds.json path
+        #[arg(long)]
+        out: Option<String>,
+        /// Emit JSON to stdout
+        #[arg(long)]
+        json: bool,
     },
 }
 
 fn main() {
     let cli = Cli::parse();
     if let Err(e) = run(cli) {
-        eprintln!(
-            "error: {}",
-            match e {
-                Error::Invalid(s) | Error::NotFound(s) | Error::Io(s) | Error::Other(s) => s,
-            }
-        );
+        eprintln!("{}", e);
         std::process::exit(1);
     }
 }
 
-fn run(cli: Cli) -> Result<(), Error> {
-    match cli.cmd {
-        Commands::Fetch {
-            feeds,
-            out,
-            verbose,
-        } => {
-            if verbose {
-                eprintln!("fetching feeds from {} -> {}", feeds, out);
-            }
-            // TODO: wire Fetcher + Parser + Repository impls
-            todo!("implement fetch pipeline");
-        }
-        Commands::Import { input, out } => {
-            let _ = (input, out);
-            todo!("implement import pipeline");
-        }
-        Commands::Add { url, fetch, out } => {
-            let _ = (url, fetch, out);
-            todo!("implement add");
-        }
-        Commands::Stats { data } => {
-            let _ = data;
-            todo!("implement stats");
-        }
-        Commands::Serve {
-            addr,
-            scheduler,
-            feeds,
-        } => {
-            let _ = (addr, scheduler, feeds);
-            todo!("implement serve");
-        }
-        Commands::Export { data, out } => {
-            let _ = (data, out);
-            todo!("implement export");
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use clap::CommandFactory;
-
-    #[test]
-    fn cli_parses() {
-        Cli::command().debug_assert();
-        // smoke parse
-        let _ = Cli::parse_from(["rssify", "stats", "--data", "data"]);
-    }
+fn run(_cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
+    // Step 2: no business logic yet.
+    // This function will delegate to core traits in later steps.
+    Ok(())
 }
