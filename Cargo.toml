@@ -1,77 +1,18 @@
-[package]
-name = "rssify"
-version = "0.3.2"
-authors = ["Salvador Guzman <guzmansalv@gmail.com>"]
-edition = "2024"
-license = "CC0-1.0"
-
-description = "RSS toolkit"
-keywords = ["rss", "cli"]
-categories = ["rss"]
-readme = "README.md"
-repository = "https://github.com/sguzman/rssify"
-
-[package.metadata.release]
-# Versioning behavior
-shared-version = true         # bump all crates together
-dependent-version = "upgrade" # update internal deps to the new version
-
-
-# Safety / policy
-allow-branch = ["main"] # only release from main (adjust as needed)
-
-# Tagging / committing
-tag-name = "v{{version}}"
-tag-message = "chore(release): v{{version}}"
-pre-release-commit-message = "chore(release): {{version}}"
-consolidate-commits = true
-push = false                                               # keep it local; you push manually
-publish = false
-sign-tag = false                                           # change to true if you sign
-
-# Run BEFORE the tag exists; compute range from previous tag to HEAD,
-# tell git-cliff to label the section as the new tag.
-
-pre-release-hook = ["sh", "-c", '''
-  set -e
-  prev="$(git describe --tags --abbrev=0 2>/dev/null || true)"
-  if [ -n "$prev" ]; then
-    # Overwrite the entire changelog using the whole history up to HEAD,
-    # but title the newest section with the upcoming version.
-    git-cliff --tag "v{{version}}" -o CHANGELOG.md
-  else
-    git-cliff --tag "v{{version}}" -o CHANGELOG.md
-  fi
-  git add CHANGELOG.md
-  git commit --amend --no-edit
-  ''']
-
-[dependencies]
-
-# Cargo.toml
-[profile.dev]
-incremental = true
-codegen-units = 256
-debug = true
-lto = "off"         # keep off in dev for speed
-
-[profile.release]
-codegen-units = 1
-lto = "thin"      # combine with mold/clang for faster release links
-opt-level = 3
-
-# -----------------------------
-# Workspace (added)
-# -----------------------------
 [workspace]
 members = ["crates/core", "crates/adapters/cli"]
 resolver = "2"
 
 [workspace.package]
+version = "0.3.2"
 edition = "2024"
 license = "CC0-1.0"
+authors = ["Salvador Guzman <guzmansalv@gmail.com>"]
+description = "RSS toolkit"
+repository = "https://github.com/sguzman/rssify"
+keywords = ["rss", "cli"]
+categories = ["rss"]
+readme = "README.md"
 
-# Keep your release config at the workspace root
 [workspace.metadata.release]
 shared-version = true
 dependent-version = "upgrade"
@@ -86,11 +27,7 @@ sign-tag = false
 pre-release-hook = ["sh", "-c", '''
   set -e
   prev="$(git describe --tags --abbrev=0 2>/dev/null || true)"
-  if [ -n "$prev" ]; then
-    git-cliff --tag "v{{version}}" -o CHANGELOG.md
-  else
-    git-cliff --tag "v{{version}}" -o CHANGELOG.md
-  fi
+  git-cliff --tag "v{{version}}" -o CHANGELOG.md
   git add CHANGELOG.md
   git commit --amend --no-edit
 ''']
@@ -100,3 +37,14 @@ thiserror = "1"
 clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+[profile.dev]
+incremental = true
+codegen-units = 256
+debug = true
+lto = "off"
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+opt-level = 3

@@ -223,6 +223,17 @@ Use Conventional Commits with semantic intent so changelogs are automated:
 * `test(core): golden cases for Retry-After`
 * `docs(architecture): backfill policy`
 
+
+### 14.1 Agent submissions MUST include a commit message
+When suggesting code or doc edits (in issues, PRs, or assistant responses), always include a one-line Conventional Commit message that we can copy-paste for the actual commit. This is mandatory for AI agents and human reviewers to keep the history coherent.
+
+### 14.2 Dependency policy: latest working crate versions
+When adding or modifying Rust dependencies:
+* Prefer the latest **compatible, working** release that builds on our pinned toolchain.
+* Run a targeted update (e.g., `cargo update -p crate_name`) and compile locally before proposing changes.
+* If a newest release breaks our build, document the failure briefly and pin to the newest **working** version; open a follow-up issue to track the upgrade.
+* Avoid broad, destabilizing updates in unrelated PRs; keep bumps scoped to the feature or fix at hand.
+
 ## 15. CI expectations
 
 CI runs:

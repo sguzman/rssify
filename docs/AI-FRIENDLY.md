@@ -23,11 +23,14 @@ This guide defines an iteration loop and repo/file conventions that make AI agen
 
    * Ask the AI to edit only that file.
    * Include the header contract and relevant errors/tests in the prompt.
+   * If the change touches dependencies, prefer the latest **working** crate versions (update narrowly and verify with `cargo check -q`).
 
 3. Compile and test
 
    * Run `cargo check -q` then `cargo test -q`.
    * If it fails, paste only the compiler error and the current file back to the AI.
+   * If a new crate version fails, fall back to the latest **working** version and note the failure briefly in the PR description.
+@@
 
 4. Refactor to boundaries
 
@@ -175,6 +178,9 @@ Context you may rely on:
 ```
 
 **Create-file prompt template:**
+Always include a commit message suggestion (required)
+At the end of any code/doc proposal, add a single-line Conventional Commit message we can use as-is, e.g.:
+- `feat(core): add EWMA clamp to scheduler to reduce jitter`
 
 ```
 Create: crates/adapters/http/src/handlers/fetch.rs
@@ -277,6 +283,8 @@ clap = { version = "4", features = ["derive"] }
 * [ ] Doctest covers canonical usage.
 * [ ] Integration/golden/property tests updated if behavior changed.
 * [ ] `cargo fmt`, `clippy -D warnings` clean.
+* [ ] Dependencies use the latest working crate versions and compile on the pinned toolchain.
+* [ ] A Conventional Commit message suggestion is included with this change.
 
 ---
 
