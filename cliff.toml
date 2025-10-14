@@ -1,27 +1,71 @@
+# --- git-cliff config -------------------------------------------------------
+
 [changelog]
 header = "# Changelog\n\n"
+# Render only non-empty sections; show breaking first, then feature/fix/etc
 body = """
-## {{ version | default(value="Unreleased") }} - {{ now() | date(format="%Y-%m-%d") }}\n
+## {{ version | default(value="Unreleased") }} - {{ now() | date(format="%Y-%m-%d") }}
+
+{% if sections["⚠️ Breaking Changes"] %}
+### ⚠️ Breaking Changes
+{% for commit in sections["⚠️ Breaking Changes"] %}
+- {{ commit.message | split(pat="\\n") | first }}
+  ({{ commit.scope | default(value="") | trim }}{{ " " if commit.scope }})
+  [{{ commit.id | truncate(length=7, end="") }}]({{ commit.link }})
+{% endfor %}
+{% endif %}
+
+{% for section in ["Features","Bug Fixes","Performance","Refactoring","Documentation","Tests","Chores","Build","CI","Other"] %}
+{% if sections[section] %}
+### {{ section }}
+{% for commit in sections[section] %}
+- {{ commit.message | split(pat="\\n") | first }}
+  ({{ commit.scope | default(value="") | trim }}{{ " " if commit.scope }})
+  [{{ commit.id | truncate(length=7, end="") }}]({{ commit.link }})
+{% endfor %}
+{% endif %}
+{% endfor %}
 """
 
-footer = "\n"
+# Add a compare link when not the first tag
+footer = """
+{% if previous.version and version %}
+[Compare changes]({{ remote.link }}/compare/v{{ previous.version }}...v{{ version }})
+{% endif %}
+
+"""
+
+# --- Git extraction behavior -------------------------------------------------
 
 [git]
-# Enable conventional commit parsing
 conventional_commits = true
-# Use tags like v1.2.3
 tag_pattern = "^v\\d+\\.\\d+\\.\\d+$"
-# Group sections nicely
-commit_parsers = [
-  { message = "^feat", group = "Features" },
-  { message = "^fix",  group = "Bug Fixes" },
-  { message = "^perf", group = "Performance" },
-  { message = "^refactor", group = "Refactoring" },
-  { message = "^docs", group = "Documentation" },
-  { message = "^test", group = "Tests" },
-  { message = "^chore", group = "Chores" },
-  { message = "BREAKING CHANGE", group = "⚠️ Breaking Changes" },
-]
-# Exclude noise if you want
+# Only include commits matching the parsers below
 filter_commits = true
+# Omit merge commits (less noise)
+skip_merge_commits = true
 
+# Group by type; support optional scope: `type(scope): message`
+commit_parsers = [
+  { message = "BREAKING CHANGE", group = "⚠️ Breaking Changes" },
+  { message = "^feat(\\(.*\\))?:", group = "Features" },
+  { message = "^fix(\\(.*\\))?:", group = "Bug Fixes" },
+  { message = "^perf(\\(.*\\))?:", group = "Performance" },
+  { message = "^refactor(\\(.*\\))?:", group = "Refactoring" },
+  { message = "^docs(\\(.*\\))?:", group = "Documentation" },
+  { message = "^test(\\(.*\\))?:", group = "Tests" },
+  { message = "^chore(\\(.*\\))?:", group = "Chores" },
+  { message = "^build(\\(.*\\))?:", group = "Build" },
+  { message = "^ci(\\(.*\\))?:", group = "CI" },
+  # fallback bucket for everything else
+  { message = ".*", group = "Other" },
+]
+
+# Optional: keep commit bodies out of the list (title-only)
+# trim = true
+
+# --- Remote links (GitHub) --------------------------------------------------
+
+[remote]
+# Adjust if you rename/move the repo
+github = { owner = "sguzman", repo = "rssify" }
