@@ -1,6 +1,6 @@
 [package]
 name = "rssify"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Salvador Guzman <guzmansalv@gmail.com>"]
 edition = "2024"
 license = "CC0-1.0"
