@@ -1,0 +1,13 @@
+# Use native CPU tuning everywhere
+[build]
+rustflags = ["-C", "target-cpu=native"]
+
+# Linux (glibc) targets: use clang as the driver and mold as the linker
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+# Optional: if you cross-compile to generic Linux, enable the same mold setup
+[target.'cfg(target_os = "linux")']
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
