@@ -27,7 +27,7 @@ impl SqliteRepo {
     pub fn begin_tx(&self) -> Result<SqliteTx<'_>, RepoError> {
         let tx = self
             .conn
-            .uninterruptible_transaction()
+            .transaction()
             .map_err(|e| RepoError::Backend(e.to_string()))?;
         Ok(SqliteTx { tx, active: true })
     }

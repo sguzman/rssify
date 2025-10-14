@@ -5,7 +5,7 @@
   ...
 }: let
   cargoToml = builtins.fromTOML (builtins.readFile (inputs.self + "/Cargo.toml"));
-  pname = cargoToml.package.name;
+  pname = cargoToml.workspace.package.name;
   pkgs' = import inputs.nixpkgs {
     system = pkgs.system;
     overlays = [inputs.rust-overlay.overlays.default];
@@ -35,7 +35,7 @@
 in
   naersk.buildPackage {
     inherit pname;
-    version = cargoToml.package.version;
+    version = cargoToml.workspace.package.version;
 
     src = ../../..;
 
