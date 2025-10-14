@@ -1,9 +1,14 @@
 [package]
-name = "rssify"
-version = "0.1.0"
-edition = "2024"
-license = "CC0-1.0"
+authors = ["Salvador Guzman <guzmansalv@gmail.com>"]
+categories = ["rss"]
 description = "RSS toolkit CLI"
+edition = "2024"
+keywords = ["rss", "cli"]
+license = "CC0-1.0"
+name = "rssify"
+readme = "../../../README.md"
+repository = "https://github.com/sguzman/rssify"
+version = "0.3.2"
 
 [dependencies]
 clap = { workspace = true }
