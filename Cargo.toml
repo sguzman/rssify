@@ -3,7 +3,6 @@ members = ["crates/core", "crates/adapters/cli"]
 resolver = "2"
 
 [workspace.package]
-name = "rssify"
 version = "0.10.0"
 edition = "2024"
 license = "CC0-1.0"
@@ -13,6 +12,9 @@ repository = "https://github.com/sguzman/rssify"
 keywords = ["rss", "cli"]
 categories = ["rss"]
 readme = "README.md"
+
+[workspace.metadata]
+name = "rssify"
 
 [workspace.metadata.release]
 shared-version = true
