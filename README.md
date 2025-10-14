@@ -16,34 +16,6 @@ rssify aims to:
 
 ---
 
-## Example config.toml
-
-A minimal configuration to run locally. Paths are illustrative.
-
-```toml
-# Where to store raw downloads and derived data
-raw_dir = "data/raw"
-fat_json = "data/fat.json"
-
-# Scheduler behavior (used by `serve` if you opt in to cron-like jobs)
-# If present, overrides per-feed cron values for global defaults.
-[scheduler]
-enabled = true
-default_cron = "*/20 * * * *"  # every 20 minutes
-
-# Networking
-[user_agent]
-name = "rssify/0.1 (+https://example.invalid)"
-follow_redirects = 10
-timeout_seconds = 20
-
-# Extraction
-[extract]
-keywords = { top_n = 20, ngram = 1, dedup_threshold = 0.9 }
-```
-
----
-
 ## Data model
 
 rssify treats content along three layers:
