@@ -11,7 +11,6 @@
   buildPkgs = with pkgs'; [
     # Rust toolchain
     toolchain
-    rust-analyzer
 
     # Release + changelog
     cargo-release
@@ -42,6 +41,7 @@
     # LSP servers
     nixd
     ty
+    rust-analyzer
   ];
 in
   buildPkgs
