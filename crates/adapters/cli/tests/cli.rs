@@ -1,16 +1,12 @@
 /*
-Module: rssify_cli::tests::cli
+Module: rssify_cli::test::cli
 Purpose: Validate CLI parsing for subcommands and flags (no business logic)
-Public API surface: tests only
-Invariants: Adapter parses args; core handles logic in later steps
-Logging keys used: component, op, feed_id, elapsed_ms, items
-Notes: Test files may exceed header rules; scripts skip /tests/.
 */
 
 #[path = "../src/main.rs"]
 mod bin_main;
 
-use bin_main::{Command, parse_from};
+use bin_main::{parse_from, Command};
 
 #[test]
 fn parses_fetch_with_flags() {
@@ -25,12 +21,7 @@ fn parses_fetch_with_flags() {
         "-vv",
     ]);
     match cli.command {
-        Command::Fetch {
-            from,
-            store,
-            json,
-            verbose,
-        } => {
+        Command::Fetch { from, store, json, verbose } => {
             assert_eq!(from.as_deref(), Some("feeds.json"));
             assert_eq!(store.as_deref(), Some("fs:/tmp"));
             assert!(json);
@@ -69,13 +60,7 @@ fn parses_import_and_add() {
         _ => panic!("expected import"),
     }
 
-    let cli = parse_from([
-        "rssify",
-        "add",
-        "https://ex.com/feed",
-        "--out",
-        "feeds.json",
-    ]);
+    let cli = parse_from(["rssify", "add", "https://ex.com/feed", "--out", "feeds.json"]);
     match cli.command {
         Command::Add { url, out, json } => {
             assert_eq!(url, "https://ex.com/feed");
@@ -85,3 +70,4 @@ fn parses_import_and_add() {
         _ => panic!("expected add"),
     }
 }
+

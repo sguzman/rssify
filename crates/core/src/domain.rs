@@ -1,10 +1,10 @@
-// Contract:
-// Purpose: Define pure types and minimal trait seams for the RSS pipeline.
-// Inputs/Outputs: Pure data structures; no I/O. Traits return Results with domain Error.
-// Invariants: Timestamps are RFC3339 UTC strings; URLs are absolute; no panics.
-// Examples: See doctest in lib.rs and unit tests below.
-// Task: Keep under 300 LOC; split if traits grow.
-// Tests: Unit tests co-located.
+//// Contract:
+//// Purpose: Define pure types and minimal trait seams for the RSS pipeline.
+//// Inputs/Outputs: Pure data structures; no I/O. Traits return Results with domain Error.
+//// Invariants: Timestamps are RFC3339 UTC strings; URLs are absolute; no panics.
+//// Examples: See doctest in lib.rs.
+//// Task: Keep under 300 LOC; split if traits grow.
+// (No co-located tests; integration tests live in crates/core/test/)
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -62,18 +62,3 @@ impl fmt::Display for EntryMeta {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn entry_meta_display_prefers_title() {
-        let m = EntryMeta {
-            url: "https://example.com/x".into(),
-            title: Some("Hello".into()),
-            published_rfc3339: None,
-            source_label: None,
-        };
-        assert_eq!(m.to_string(), "Hello");
-    }
-}

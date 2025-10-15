@@ -1,5 +1,5 @@
 /*
-Module: rssify_cli::tests::pipeline_fetch
+Module: rssify_cli::test::pipeline_fetch
 Purpose: Validate load_feed_seeds() and fetch_from_file() without network or writes.
 */
 
@@ -12,7 +12,6 @@ use std::path::PathBuf;
 
 fn write_temp(contents: &str) -> PathBuf {
     let mut p = std::env::temp_dir();
-    // Use PID-based filename to avoid collisions in parallel runs.
     let pid = std::process::id();
     let nanos = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -32,7 +31,6 @@ fn load_simple_string_array() {
 
     let seeds = load_feed_seeds(&p).expect("load seeds");
     assert_eq!(seeds.len(), 2);
-    // URL gets normalized via FeedId::from_url; literal stays as-is
     assert!(seeds[0].as_str().contains("example.com"));
     assert_eq!(seeds[1].as_str(), "guid:FEED 01");
 }

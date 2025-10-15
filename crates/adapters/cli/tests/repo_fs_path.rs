@@ -1,8 +1,6 @@
 /*
-Module: rssify_cli::tests::repo_fs_path
+Module: rssify_cli::test::repo_fs_path
 Purpose: Validate FsPaths builders and urlsafe encoding shapes (no I/O)
-Note: This integration test includes the source module directly. The path
-      must be relative to the tests/ directory.
 */
 
 #[path = "../src/repo_fs.rs"]
@@ -19,12 +17,10 @@ fn feed_dir_and_files_layout() {
     let json = FsPaths::feed_json(root, &feed);
     let blob = FsPaths::last_blob(root, &feed);
 
-    // Paths should end with the expected structure and encoding.
     assert!(dir.ends_with("feeds/url%3Ahttps%3A%2F%2Fexample.com%2Ffeed"));
     assert!(json.ends_with("feeds/url%3Ahttps%3A%2F%2Fexample.com%2Ffeed/feed.json"));
     assert!(blob.ends_with("feeds/url%3Ahttps%3A%2F%2Fexample.com%2Ffeed/last_blob.bin"));
 
-    // Parent relationship sanity.
     assert_eq!(Path::new(&json).parent().unwrap().to_string_lossy(), dir);
     assert_eq!(Path::new(&blob).parent().unwrap().to_string_lossy(), dir);
 }
@@ -37,12 +33,7 @@ fn entry_json_layout() {
 
     let p = FsPaths::entry_json(root, &feed, &entry);
 
-    // Expect percent-encoding of spaces and punctuation in both IDs.
-    assert!(p.ends_with(
-        "feeds/guid%3AFEED%2001/entries/guid%3AABC%20123.json"
-    ));
-
-    // Intermediate directories exist in the string.
+    assert!(p.ends_with("feeds/guid%3AFEED%2001/entries/guid%3AABC%20123.json"));
     assert!(p.contains("/feeds/"));
     assert!(p.contains("/entries/"));
 }
