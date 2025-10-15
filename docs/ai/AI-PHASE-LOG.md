@@ -104,6 +104,9 @@ Follow-ups:
 - Fixed a compile error in unescape_id and corrected CLI to call repo.put_feed_json(...).
 - Outcome: smaller files, clearer responsibilities, clean build.
 - Fix: removed erroneous re-export of load_feed_seeds from the CLI main to resolve E0364 in a binary crate.
-
-
+- Fix: restore public pipeline and repo_fs modules for CLI tests.
+  - pipeline.rs: exposes FetchSummary and load_feed_seeds, with thiserror-based errors.
+  - repo_fs.rs: exposes FsPaths path builders used by path-shape tests.
+  - main.rs: adds parse_from for CLI parsing tests.
+  - Cargo.toml: add rssify-core and thiserror deps back to cli crate.
 

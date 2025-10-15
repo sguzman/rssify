@@ -1,9 +1,11 @@
 //// File: crates/adapters/cli/src/main.rs
-//// Note: Remove erroneous re-export of load_feed_seeds (E0364).
+//// Role: CLI entrypoint; uses pipeline and repo_fs modules exposed for tests.
 
 use clap::{Parser, Subcommand};
 use serde_json::json;
 
+pub mod pipeline;
+pub mod repo_fs;
 pub mod stats;
 
 #[derive(Debug, Parser)]
@@ -15,22 +17,29 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    /// Fetch feeds from a seed source (Phase 2: file-only, no network).
     Fetch {
+        /// Seed file to read (JSON). Defaults to "feeds.json" if omitted.
         #[arg(long)]
         from: Option<String>,
+        /// Repository target (fs:<root>).
         #[arg(long)]
         store: Option<String>,
+        /// Emit machine-readable JSON.
         #[arg(long)]
         json: bool,
+        /// Increase verbosity (-v, -vv).
         #[arg(short, long, action = clap::ArgAction::Count)]
         verbose: u8,
     },
+    /// Show repository stats (Phase 2: filesystem only).
     Stats {
         #[arg(long)]
         store: String,
         #[arg(long)]
         json: bool,
     },
+    /// Stubs kept for later phases.
     Import {
         #[arg(long)]
         file: Option<String>,
@@ -48,13 +57,22 @@ pub enum Command {
     },
 }
 
+/// Public helper used by tests to exercise clap parsing without exec.
+pub fn parse_from<I, S>(iter: I) -> Cli
+where
+    I: IntoIterator<Item = S>,
+    S: Into<std::ffi::OsString> + Clone,
+{
+    Cli::parse_from(iter)
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     match cli.command {
         Command::Fetch { from, store, json, verbose } => {
             let seed_path = from.unwrap_or_else(|| "feeds.json".to_string());
-            let ids = load_feed_seeds(&seed_path)
+            let ids = pipeline::load_feed_seeds(&seed_path)
                 .map_err(|e| format!("failed to parse seeds: {}", e))?;
 
             let mut written = 0usize;
@@ -135,47 +153,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
-}
-
-// -------------------------
-// Seed loading (Phase 2)
-// -------------------------
-use std::fs::File;
-use std::io::Read as _;
-
-fn load_feed_seeds(path: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let mut f = File::open(path)?;
-    let mut buf = String::new();
-    f.read_to_string(&mut buf)?;
-    let val: serde_json::Value = serde_json::from_str(&buf)?;
-    let mut out = Vec::new();
-
-    match val {
-        serde_json::Value::Array(arr) => {
-            for item in arr {
-                match item {
-                    serde_json::Value::String(s) => out.push(s),
-                    serde_json::Value::Object(mut m) => {
-                        if let Some(idv) = m.remove("id") {
-                            if let Some(id) = idv.as_str() {
-                                out.push(id.to_string());
-                                continue;
-                            }
-                        }
-                        if let Some(urlv) = m.remove("url") {
-                            if let Some(url) = urlv.as_str() {
-                                out.push(url.to_string());
-                                continue;
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        }
-        _ => return Err("expected a JSON array at top-level".into()),
-    }
-
-    Ok(out)
 }
 

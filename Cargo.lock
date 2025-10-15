@@ -151,9 +151,11 @@ name = "rssify-cli"
 version = "0.9.0"
 dependencies = [
  "clap",
+ "rssify-core",
  "rssify-repo-fs",
  "serde",
  "serde_json",
+ "thiserror",
 ]
 
 [[package]]
