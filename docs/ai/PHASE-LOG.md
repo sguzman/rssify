@@ -226,3 +226,11 @@ Follow-ups
 - Why: Consistent relative paths prevent tooling quirks and keep the workspace portable.
 - Follow-ups: None for this task.
 
+### Phase 4 log — P4-T3 (2025-10-15)
+
+- Change: Added end-to-end integration tests for seed parsing under `crates/adapters/cli/tests/seed_parsing.rs`.
+  - Covered three accepted seed formats: array of strings; object with a `seeds` array; array of objects using `id` or `url` or `guid`.
+  - Tests invoke the `rssify` binary via the `CARGO_BIN_EXE_rssify` env var and assert that summary counts equal the number of seeds.
+- Why: Locks behavior of `load_feed_seeds` and the fetch summary without introducing extra dev dependencies.
+- Follow-ups: Consider adding negative tests for malformed inputs in a later phase.
+
