@@ -120,3 +120,13 @@ Follow-ups:
   - ScheduleRepo (last_ok_fetch_ts/record_fetch_ts → schedule/<id>/last_ok.txt).
 - Added FsTx and begin_tx() to match core::Tx and tests.
 - Centralized JSON IO + ID escaping in util.rs; split files for clarity.
+
+### Phase 3 log — P3-T1 (2025-10-15)
+
+- Change: CLI now parses `--store` via `spec::RepoSpec` in `main.rs` for both `fetch` and `stats`.
+- Why: Centralize repo-spec validation and align with docs where the CLI “parses/validates” repository selection without embedding backend behavior.
+- Behavior: No change for filesystem repos; `fs:<root>` continues to work. Non-`fs` kinds are recognized but return a clear “not supported in this phase” error.
+- Follow-ups:
+  - When a new backend adapter lands (e.g., SQLite), wire its kind here by matching `RepoKind::Sqlite` and constructing the concrete repo.
+  - Consider promoting structured logging keys across CLI messages (component, op, items) consistently.
+
