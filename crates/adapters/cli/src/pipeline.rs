@@ -2,12 +2,18 @@
 Module: rssify_cli::pipeline
 Purpose: Pure, no-network pipeline utilities for Phase 2
 Public API:
-  - Types: FeedSeed, FeedMetaDelta, PersistStats, FetchSummary
-  - fns: load_feed_seeds(path), fetch_from_file(path)
+  - Types:
+      FeedSeed { url, title_hint, id }
+      FeedMetaDelta { title, site_url, etag, last_modified }
+      PersistStats { feed, items_written, elapsed_ms, not_modified, failure_hint }
+      FetchSummary { feeds_total, feeds_processed, items_parsed, items_written }
+  - fns:
+      load_feed_seeds(path) -> Result<Vec<FeedId>, PipelineError>
+      fetch_from_file(path) -> Result<FetchSummary, PipelineError>
 Notes:
   - No I/O writes; only reads the given JSON file.
-  - Types here are intentionally minimal placeholders to satisfy CLI/tests.
   - Accepts flexible seed formats to reduce friction.
+  - Keep structs minimal but aligned with tests.
 */
 
 use rssify_core::FeedId;
@@ -26,29 +32,48 @@ pub enum PipelineError {
     Empty(String),
 }
 
-/// A normalized seed for processing; wraps a canonical FeedId.
-/// Intentionally tiny for now; more fields can be added later if needed.
-#[derive(Debug, Clone)]
+/// A normalized seed for processing.
+/// - url: original URL string (if applicable)
+/// - title_hint: optional human label
+/// - id: canonical FeedId used for storage and logging
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FeedSeed {
+    pub url: String,
+    pub title_hint: Option<String>,
     pub id: FeedId,
 }
 
 impl From<FeedId> for FeedSeed {
-    fn from(id: FeedId) -> Self { Self { id } }
+    fn from(id: FeedId) -> Self {
+        // Best-effort reconstruction of a display URL; fall back to the ID.
+        let url_guess = if id.as_str().starts_with("http://")
+            || id.as_str().starts_with("https://")
+        {
+            id.as_str().to_string()
+        } else {
+            id.as_str().to_string()
+        };
+        Self { url: url_guess, title_hint: None, id }
+    }
 }
 
 /// Minimal meta delta carrier produced by parsers.
-/// For Phase 2 it only tracks whether anything changed.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct FeedMetaDelta {
-    pub changed: bool,
+    pub title: Option<String>,
+    pub site_url: Option<String>,
+    pub etag: Option<String>,
+    pub last_modified: Option<String>,
 }
 
 /// Minimal persist stats returned by the persist stage.
-/// For Phase 2 we expose a single items_written counter.
-#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PersistStats {
+    pub feed: FeedId,
     pub items_written: u32,
+    pub elapsed_ms: u64,
+    pub not_modified: bool,
+    pub failure_hint: Option<String>,
 }
 
 /// Rollup summary suitable for `--json` CLI output.
@@ -67,7 +92,7 @@ pub struct FetchSummary {
 #[serde(untagged)]
 enum Seed {
     Str(String),
-    Obj { url: Option<String>, id: Option<String> },
+    Obj { url: Option<String>, id: Option<String>, title_hint: Option<String> },
 }
 
 /// Load feed seeds from a JSON file and normalize to FeedId values.
@@ -91,15 +116,14 @@ pub fn load_feed_seeds<P: AsRef<Path>>(path: P) -> Result<Vec<FeedId>, PipelineE
     for s in seeds {
         match s {
             Seed::Str(s) => out.push(normalize_id(&s)),
-            Seed::Obj { url: Some(u), id } => {
-                // Prefer explicit id if present; otherwise use URL-derived ID.
+            Seed::Obj { url: Some(u), id, .. } => {
                 out.push(match id {
                     Some(id) => FeedId::new(&id),
                     None => FeedId::from_url(&u),
                 });
             }
-            Seed::Obj { url: None, id: Some(id) } => out.push(FeedId::new(&id)),
-            Seed::Obj { url: None, id: None } => { /* skip unusable */ }
+            Seed::Obj { url: None, id: Some(id), .. } => out.push(FeedId::new(&id)),
+            Seed::Obj { url: None, id: None, .. } => { /* skip unusable */ }
         }
     }
 
@@ -121,14 +145,24 @@ pub fn fetch_from_file<P: AsRef<Path>>(path: P) -> Result<FetchSummary, Pipeline
     let feeds_processed = feeds_total;
     let items_parsed = feeds_total;
 
-    // Phase-2 placeholder persist stats.
-    let persist = PersistStats { items_written: feeds_total };
+    // Phase-2 placeholder persist stats derived per feed (not returned here).
+    // Example construction to validate fields compile:
+    // let _stats: Vec<PersistStats> = seeds
+    //     .into_iter()
+    //     .map(|fid| PersistStats {
+    //         feed: fid,
+    //         items_written: 1,
+    //         elapsed_ms: 0,
+    //         not_modified: false,
+    //         failure_hint: None,
+    //     })
+    //     .collect();
 
     Ok(FetchSummary {
         feeds_total,
         feeds_processed,
         items_parsed,
-        items_written: persist.items_written,
+        items_written: feeds_total,
     })
 }
 
