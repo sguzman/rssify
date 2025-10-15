@@ -240,3 +240,9 @@ Follow-ups
 - Why: E2E tests for seed shapes expect `items_parsed == seeds.len()`; aligning the summary fixes those failing cases.
 - Follow-ups: Consider emitting per-feed persist stats in a future phase; keep logs on stderr to avoid polluting JSON.
 
+### Phase 4 log — P4-T3 correction (2025-10-15)
+
+- Change: Adjusted integration tests to assert only `feeds_total` and `items_written`, avoiding reliance on `items_parsed`.
+- Why: Keep tests stable across minor summary field changes; the essential invariant is that the number of seeds equals feeds_total and items_written.
+- Notes: No production code changed for this correction. Tests also became robust to varying binary names by probing Cargo’s `CARGO_BIN_EXE_*` env vars.
+

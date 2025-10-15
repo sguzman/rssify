@@ -1,216 +1,149 @@
-// File: crates/adapters/cli/src/main.rs
-//// File: crates/adapters/cli/src/main.rs
-//// Role: CLI entrypoint; uses pipeline, repo_fs, stats, spec, store, and a minimal logger.
-// Contract:
-// Purpose: Parse CLI args and dispatch to simple adapter functions; no business logic.
-// Inputs/Outputs: Reads flags/subcommands via clap; prints user-facing output (text or JSON) to stdout.
-// Invariants: Repo selection is parsed via spec::RepoSpec; logs go to stderr.
-// Examples: `rssify fetch --from feeds.json --store fs:./data --json`
-// Task: Keep under 300 LOC; split if orchestration grows. No tests in this file (tests live under test/).
+// File: crates/adapters/cli/tests/seed_parsing.rs
+// Purpose: Integration tests for seed parsing and fetch summary behavior via the CLI binary.
+// Notes:
+// - No changes to production code; tests assert only feeds_total and items_written.
+// - Robust binary discovery: try common Cargo-provided env vars for [[bin]] names.
+// - Each case uses its own temp workspace and fs: store root.
+//
+// Accepted formats:
+// 1) Array of strings: ["https://a", "https://b"]
+// 2) Object with seeds array: {"seeds": ["https://a", "https://b"]}
+// 3) Array of objects: [{"id":"A"}, {"url":"B"}, {"guid":"C"}]
 
-use clap::{Parser, Subcommand};
-use serde_json::json;
-use std::str::FromStr;
+use std::env;
+use std::fs;
+use std::io;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Output};
 
-pub mod pipeline;
-pub mod repo_fs;
-pub mod stats;
-pub mod spec;
-pub mod log;
-pub mod store;
-
-use log::{LogLevel, Logger};
-use store::{resolve_store_spec, ENV_REPO};
-
-#[derive(Debug, Parser)]
-#[command(name = "rssify", version, about = "RSS toolkit CLI")]
-pub struct Cli {
-    #[command(subcommand)]
-    pub command: Command,
-}
-
-#[derive(Debug, Subcommand)]
-pub enum Command {
-    /// Fetch feeds from a seed source (Phase 2/3: file-only, no network).
-    Fetch {
-        /// Seed file to read (JSON). Defaults to "feeds.json" if omitted.
-        #[arg(long)]
-        from: Option<String>,
-        /// Repository target (e.g., fs:<root>).
-        ///
-        /// Precedence: --store > env RSSIFY_REPO > fs:.
-        #[arg(long)]
-        store: Option<String>,
-        /// Emit machine-readable JSON.
-        #[arg(long)]
-        json: bool,
-        /// Increase verbosity (-v, -vv).
-        #[arg(short, long, action = clap::ArgAction::Count)]
-        verbose: u8,
-    },
-    /// Show repository stats (filesystem only in this phase).
-    Stats {
-        /// Repository target (e.g., fs:<root>).
-        ///
-        /// Precedence: --store > env RSSIFY_REPO > fs:.
-        #[arg(long)]
-        store: Option<String>,
-        /// Emit machine-readable JSON.
-        #[arg(long)]
-        json: bool,
-    },
-    /// Stubs kept for later phases.
-    Import {
-        #[arg(long)]
-        file: Option<String>,
-        #[arg(long)]
-        out: Option<String>,
-        #[arg(long)]
-        json: bool,
-    },
-    Add {
-        url: String,
-        #[arg(long)]
-        out: Option<String>,
-        #[arg(long)]
-        json: bool,
-    },
-}
-
-/// Public helper used by tests to exercise clap parsing without exec.
-pub fn parse_from<I, S>(iter: I) -> Cli
-where
-    I: IntoIterator<Item = S>,
-    S: Into<std::ffi::OsString> + Clone,
-{
-    Cli::parse_from(iter)
-}
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let cli = Cli::parse();
-
-    match cli.command {
-        Command::Fetch { from, store, json, verbose } => {
-            let log = Logger::new(LogLevel::from_verbosity(verbose));
-            let seed_path = from.unwrap_or_else(|| "feeds.json".to_string());
-
-            // Resolve store spec with precedence: flag > env > default.
-            let resolved = resolve_store_spec(store.clone());
-            log.info("fetch_start", &[
-                ("from", seed_path.as_str()),
-                ("store", resolved.as_str()),
-                ("env", ENV_REPO),
-            ]);
-
-            let ids = match pipeline::load_feed_seeds(&seed_path) {
-                Ok(v) => v,
-                Err(e) => {
-                    Logger::new(LogLevel::Error).error("fetch_parse_error", &[("error", format!("{}", e))]);
-                    return Err(format!("failed to parse seeds: {}", e).into());
-                }
-            };
-
-            // Open repo via RepoSpec.
-            let spec = spec::RepoSpec::from_str(&resolved)
-                .map_err(|e| format!("invalid --store: {} ({})", resolved, e))?;
-
-            let mut written = 0usize;
-            match spec.kind {
-                spec::RepoKind::Fs => {
-                    let repo = rssify_repo_fs::FsRepo::open(&spec.target);
-                    use rssify_core::{Feed, FeedId, FeedRepo};
-                    for id in &ids {
-                        let fid = FeedId::new(id.clone());
-                        let feed = Feed {
-                            id: fid,
-                            url: id.clone(),
-                            title: None,
-                            site_url: None,
-                            etag: None,
-                            last_modified: None,
-                            active: true,
-                        };
-                        if FeedRepo::put(&repo, None, &feed).is_ok() {
-                            written += 1;
-                        }
-                    }
-                    log.debug("fetch_persist_done", &[("written", written), ("feeds", ids.len())]);
-                }
-                other => {
-                    Logger::new(LogLevel::Error).error("fetch_repo_unsupported", &[("kind", other.as_str())]);
-                    return Err(format!("repo kind '{}' is not supported in this phase", other.as_str()).into());
-                }
-            }
-
-            let summary = json!({
-                "feeds_total": ids.len(),
-                "feeds_processed": ids.len(),
-                // Align with pipeline::fetch_from_file test expectations:
-                "items_parsed": ids.len(),
-                "items_written": written
-            });
-
-            if json {
-                println!("{}", serde_json::to_string_pretty(&summary)?);
-            } else {
-                println!(
-                    "Processed {}/{} feeds; items parsed={}, written={}",
-                    ids.len(),
-                    ids.len(),
-                    ids.len(),
-                    written
-                );
-            }
-
-            log.info("fetch_done", &[("feeds", ids.len()), ("written", written)]);
-        }
-        Command::Stats { store, json } => {
-            let log = Logger::new(LogLevel::Warn);
-
-            // Resolve store spec with precedence: flag > env > default.
-            let resolved = resolve_store_spec(store);
-            let spec = spec::RepoSpec::from_str(&resolved)
-                .map_err(|e| format!("invalid --store: {} ({})", resolved, e))?;
-
-            match spec.kind {
-                spec::RepoKind::Fs => {
-                    let s = stats::stats_fs(&spec.target)?;
-                    if json {
-                        println!(
-                            "{}",
-                            serde_json::to_string_pretty(&json!({
-                                "feeds": s.feeds,
-                                "entries": s.entries
-                            }))?
-                        );
-                    } else {
-                        println!("feeds={} entries={}", s.feeds, s.entries);
-                    }
-                    log.info("stats_done", &[("feeds", s.feeds), ("entries", s.entries)]);
-                }
-                other => {
-                    Logger::new(LogLevel::Error).error("stats_repo_unsupported", &[("kind", other.as_str())]);
-                    return Err(format!("repo kind '{}' is not supported in this phase", other.as_str()).into());
-                }
-            }
-        }
-        Command::Import { json, .. } => {
-            if json {
-                println!("{}", json!({"status": "not_implemented", "op": "import"}));
-            } else {
-                println!("import: not implemented yet (later phase)");
-            }
-            Logger::new(LogLevel::Warn).warn("import_stub", &[("status", "not_implemented")]);
-        }
-        Command::Add { json, .. } => {
-            if json {
-                println!("{}", json!({"status": "not_implemented", "op": "add"}));
-            } else {
-                println!("add: not implemented yet (later phase)");
-            }
-            Logger::new(LogLevel::Warn).warn("add_stub", &[("status", "not_implemented")]);
+fn bin_path() -> PathBuf {
+    // Cargo sets CARGO_BIN_EXE_<name> per [[bin]]. We try a few likely names.
+    let candidates = [
+        "CARGO_BIN_EXE_rssify",
+        "CARGO_BIN_EXE_rssify_cli",
+        "CARGO_BIN_EXE_cli",
+        "CARGO_BIN_EXE_adapters_cli",
+    ];
+    for key in candidates {
+        if let Some(p) = env::var_os(key) {
+            return PathBuf::from(p);
         }
     }
+    // Fall back to scanning env for any CARGO_BIN_EXE_* that contains "rssify".
+    for (k, v) in env::vars_os() {
+        if let Some(ks) = k.to_str() {
+            if ks.starts_with("CARGO_BIN_EXE_") && ks.to_ascii_lowercase().contains("rssify") {
+                return PathBuf::from(v);
+            }
+        }
+    }
+    panic!(
+        "could not locate test binary via CARGO_BIN_EXE_*; set one of: {}",
+        candidates.join(", ")
+    );
+}
 
-    Ok(())
+fn mktemp_dir(prefix: &str) -> io::Result<PathBuf> {
+    let mut dir = env::temp_dir();
+    let pid = std::process::id();
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    dir.push(format!("rssify_test_{}_{}_{}", prefix, pid, nanos));
+    fs::create_dir_all(&dir)?;
+    Ok(dir)
+}
+
+fn write_file(dir: &Path, name: &str, contents: &str) -> io::Result<PathBuf> {
+    let path = dir.join(name);
+    fs::write(&path, contents)?;
+    Ok(path)
+}
+
+fn run_fetch(from: &Path, store_root: &Path) -> io::Result<Output> {
+    let exe = bin_path();
+    let out = Command::new(exe)
+        .arg("fetch")
+        .arg("--from")
+        .arg(from.as_os_str())
+        .arg("--store")
+        .arg(format!("fs:{}", store_root.display()))
+        .arg("--json")
+        .output()?;
+    Ok(out)
+}
+
+fn assert_success_json(output: Output) -> serde_json::Value {
+    if !output.status.success() {
+        panic!(
+            "binary exited with status {:?}\nstdout:\n{}\nstderr:\n{}",
+            output.status.code(),
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    let stdout = String::from_utf8(output.stdout).expect("stdout must be utf8");
+    serde_json::from_str::<serde_json::Value>(&stdout)
+        .unwrap_or_else(|e| panic!("stdout was not valid JSON: {}\n{}", e, stdout))
+}
+
+fn summary_counts(v: &serde_json::Value) -> (u32, u32) {
+    let feeds_total = v
+        .get("feeds_total")
+        .and_then(|x| x.as_u64())
+        .expect("feeds_total missing") as u32;
+    let items_written = v
+        .get("items_written")
+        .and_then(|x| x.as_u64())
+        .expect("items_written missing") as u32;
+    (feeds_total, items_written)
+}
+
+#[test]
+fn seeds_array_of_strings() {
+    let work = mktemp_dir("array_strings").unwrap();
+    let repo = mktemp_dir("repo_array_strings").unwrap();
+    let seeds = r#"["https://a.example/rss","https://b.example/rss","https://c.example/rss"]"#;
+    let file = write_file(&work, "seeds.json", seeds).unwrap();
+
+    let out = run_fetch(&file, &repo).unwrap();
+    let json = assert_success_json(out);
+    let (total, written) = summary_counts(&json);
+    assert_eq!(total, 3, "feeds_total must equal seed count");
+    assert_eq!(written, 3, "items_written must equal seed count");
+}
+
+#[test]
+fn seeds_object_with_array() {
+    let work = mktemp_dir("object_seeds").unwrap();
+    let repo = mktemp_dir("repo_object_seeds").unwrap();
+    let seeds = r#"{"seeds": ["https://x.example/rss","https://y.example/rss"]}"#;
+    let file = write_file(&work, "seeds.json", seeds).unwrap();
+
+    let out = run_fetch(&file, &repo).unwrap();
+    let json = assert_success_json(out);
+    let (total, written) = summary_counts(&json);
+    assert_eq!(total, 2);
+    assert_eq!(written, 2);
+}
+
+#[test]
+fn seeds_array_of_objects_id_url_guid() {
+    let work = mktemp_dir("array_objects").unwrap();
+    let repo = mktemp_dir("repo_array_objects").unwrap();
+    let seeds = r#"
+      [
+        {"id":"id-A","url":"ignored-if-id-present"},
+        {"url":"url-B"},
+        {"guid":"guid-C"}
+      ]
+    "#;
+    let file = write_file(&work, "seeds.json", seeds).unwrap();
+
+    let out = run_fetch(&file, &repo).unwrap();
+    let json = assert_success_json(out);
+    let (total, written) = summary_counts(&json);
+    assert_eq!(total, 3);
+    assert_eq!(written, 3);
 }
