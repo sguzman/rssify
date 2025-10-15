@@ -22,3 +22,4 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 rssify-core = { path = "../../core" }
+rssify-repo-fs = { path = "../../repos/fs" }

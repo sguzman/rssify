@@ -65,3 +65,19 @@ Follow-ups:
 - Consider a stronger, percent-encoded escaping or hashed sharding for very long IDs.
 - Add simple metrics (counts, elapsed) once observability scaffolding lands.
 
+## Phase 2 - Task 8
+
+- Implemented P2-T1: Wired `fetch` to filesystem repo.
+  - `rssify fetch --from <file> --store fs:<root>` now loads seeds and persists minimal `Feed` records per seed using `rssify-repo-fs`.
+  - Behavior: no network; entries are not created in Phase 2; counts reflect processed seeds.
+- Implemented P2-T2: RepoSpec factory to concrete fs backend.
+  - `fs:<root>` parsed by `RepoSpec`; CLI opens `FsRepo::open(<root>)`.
+- Implemented P2-T3: Completed seed normalization edge cases.
+  - `load_feed_seeds` prefers explicit `id` when both `url` and `id` are present; accepts string and object forms.
+
+Notes:
+- We added `rssify-repo-fs` as a dependency of the CLI.
+- Added `FsRepo::open` which ensures the repository root directory exists; subdirectories are created on demand during writes.
+- Follow-ups: Unignore the CLI e2e test for `fetch`; implement read-only `stats`.
+
+

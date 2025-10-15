@@ -10,6 +10,8 @@
 //// Tests: crates/adapters/cli/tests/*.rs cover parsing and, later, integration.
 
 use clap::{Parser, Subcommand};
+use rssify_core::{Feed, FeedRepo};
+use rssify_repo_fs;
 
 #[derive(Debug, Parser)]
 #[command(name = "rssify", version, about = "RSS toolkit CLI")]
@@ -70,15 +72,9 @@ where
     Cli::parse_from(iter)
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
-    if let Err(e) = run(cli) {
-        eprintln!("{}", e);
-        std::process::exit(1);
-    }
-}
 
-fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
     match cli.command {
         Command::Fetch {
             from,
@@ -86,12 +82,13 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             json,
             verbose,
         } => {
-            // Validate repository seam early (even if unused in Phase 2).
-            if let Some(s) = store.as_deref() {
-                let _spec = spec::RepoSpec::parse(s).map_err(|why| {
+            // Parse repo spec if provided and prepare optional FS repo
+            let repo_spec = match store.as_deref() {
+                Some(s) => Some(spec::RepoSpec::parse(s).map_err(|why| {
                     format!("invalid --store {:?}: {}", s, why)
-                })?;
-            }
+                })?),
+                None => None,
+            };
 
             let seed_path = from.unwrap_or_else(|| "feeds.json".to_string());
 
@@ -104,10 +101,45 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
                 );
             }
 
-            let summary = pipeline::fetch_from_file(&seed_path).map_err(|e| {
-                // Map structured error to readable message; preserve path context.
-                format!("{}", e)
-            })?;
+            // Load seeds as normalized IDs
+            let ids = pipeline::load_feed_seeds(&seed_path).map_err(|e| format!("{}", e))?;
+
+            // If fs: store is provided, persist minimal Feed records
+            let mut feeds_written = 0u32;
+            if let Some(spec) = &repo_spec {
+                match spec.kind {
+                    spec::RepoKind::Fs => {
+                        // Open filesystem repo rooted at spec.target
+                        let repo = rssify_repo_fs::FsRepo::open(&spec.target);
+                        for id in &ids {
+                            let feed = rssify_core::Feed {
+                                id: id.clone(),
+                                // In Phase 2 we do not resolve network URLs; use the id string as the url field.
+                                url: id.as_str().to_string(),
+                                title: None,
+                                site_url: None,
+                                etag: None,
+                                last_modified: None,
+                                active: true,
+                            };
+                            // Ignore individual write errors but count only successes
+                            if rssify_core::FeedRepo::put(&repo, None, &feed).is_ok() {
+                                feeds_written += 1;
+                            }
+                        }
+                    }
+                    _ => {
+                        // Other backends not wired in Phase 2
+                    }
+                }
+            }
+
+            let summary = pipeline::FetchSummary {
+                feeds_total: ids.len() as u32,
+                feeds_processed: ids.len() as u32,
+                items_parsed: 0,
+                items_written: feeds_written,
+            };
 
             if json {
                 // Stable JSON schema mirrors FetchSummary.
@@ -130,14 +162,14 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
             if json {
                 println!("{}", serde_json::json!({"status": "not_implemented", "op": "stats"}));
             } else {
-                println!("stats: not implemented yet (Phase 3)");
+                println!("stats: not implemented yet (Phase 2)");
             }
         }
         Command::Import { json, .. } => {
             if json {
                 println!("{}", serde_json::json!({"status": "not_implemented", "op": "import"}));
             } else {
-                println!("import: not implemented yet (Phase 3)");
+                println!("import: not implemented yet (Phase 2)");
             }
         }
         Command::Add { json, .. } => {
