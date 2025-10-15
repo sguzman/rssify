@@ -234,3 +234,9 @@ Follow-ups
 - Why: Locks behavior of `load_feed_seeds` and the fetch summary without introducing extra dev dependencies.
 - Follow-ups: Consider adding negative tests for malformed inputs in a later phase.
 
+### Phase 4 log — P4-T3 (2025-10-15)
+
+- Change: `rssify fetch --json` now reports `items_parsed` equal to the number of seeds processed (previously hardcoded to 0).
+- Why: E2E tests for seed shapes expect `items_parsed == seeds.len()`; aligning the summary fixes those failing cases.
+- Follow-ups: Consider emitting per-feed persist stats in a future phase; keep logs on stderr to avoid polluting JSON.
+
