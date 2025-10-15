@@ -79,17 +79,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let Some(store) = store {
                 if let Some(root) = store.strip_prefix("fs:") {
                     let repo = rssify_repo_fs::FsRepo::open(root);
+                    // Use rssify_core types and traits
+                    use rssify_core::{Feed, FeedId, FeedRepo};
                     for id in &ids {
-                        let feed_obj = json!({
-                            "id": id,
-                            "url": id,
-                            "title": null,
-                            "site_url": null,
-                            "etag": null,
-                            "last_modified": null,
-                            "active": true
-                        });
-                        if repo.put_feed_json(id, &feed_obj).is_ok() {
+                        // Prefer constructing FeedId via new(); if 'id' is a URL, new() should accept it.
+                        let fid = FeedId::new(id.clone());
+                        let feed = Feed {
+                            id: fid,
+                            url: id.clone(),
+                            title: None,
+                            site_url: None,
+                            etag: None,
+                            last_modified: None,
+                            active: true,
+                        };
+                        if FeedRepo::put(&repo, None, &feed).is_ok() {
                             written += 1;
                         }
                     }
