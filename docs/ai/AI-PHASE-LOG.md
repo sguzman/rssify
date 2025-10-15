@@ -19,14 +19,14 @@
 
 ## Phase 2 - S4 CLI wiring (2025-10-15)
 
-- Wired `rssify fetch` to `pipeline::fetch_from_file`, honoring `--from` (default: feeds.json) and `--json`.
-- Added early validation for `--store` via `spec::RepoSpec` to enforce the repo seam format now.
-- Adopted the AI-FRIENDLY header block in `crates/adapters/cli/src/main.rs`.
-- Minimal verbosity: `-v` prints start context; `-vv` includes completion trace.
-- Left `stats`, `import`, and `add` as stubs that return success with explicit “not implemented” messaging (and JSON placeholders) to keep pipelines stable.
+- Wired "rssify fetch" to "pipeline::fetch_from_file", honoring "--from" (default: feeds.json) and "--json".
+- Added early validation for "--store" via "spec::RepoSpec" to enforce the repo seam format.
+- Adopted the AI-FRIENDLY header block (line comments) in "crates/adapters/cli/src/main.rs".
+- Minimal verbosity: "-v" prints start context; "-vv" includes completion trace.
+- Left "stats", "import", and "add" as stubs that return success with explicit "not implemented" messaging (and JSON placeholders) to keep pipelines stable.
 
 Follow-ups:
-- Implement real `stats` reading via repository trait (Phase 3).
-- Split subcommand handlers into dedicated files (`cmd_fetch.rs`, etc.) once logic grows.
-- Add integration test to exercise `rssify fetch --json` with fixtures.
+- Implement real "stats" reading via repository trait (Phase 3).
+- Split subcommand handlers into dedicated files ("cmd_fetch.rs", etc.) once logic grows.
+- Add integration test to exercise "rssify fetch --json" with fixtures.
 

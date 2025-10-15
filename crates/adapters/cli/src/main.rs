@@ -1,15 +1,13 @@
-/*
-File: crates/adapters/cli/src/main.rs
-Purpose: CLI entrypoint — parse args and dispatch to pipeline/core with simple output.
-Inputs: OS args via clap; optional seed file (--from) and store spec (--store).
-Outputs: Human summary to stdout by default or JSON when --json; non-zero exit on error.
-Side effects: Reads files when executing pipeline helpers; prints to stdout/stderr.
-Invariants:
- - No business logic: call pipeline/core only.
- - JSON mode must be machine-friendly and stable.
- - Keep file under 400 LOC; split subcommands later if needed.
-Tests: crates/adapters/cli/tests/*.rs cover parsing and, later, integration.
-*/
+//// File: crates/adapters/cli/src/main.rs
+//// Purpose: CLI entrypoint - parse args and dispatch to pipeline/core with simple output.
+//// Inputs: OS args via clap; optional seed file (--from) and store spec (--store).
+//// Outputs: Human summary to stdout by default or JSON when --json; non-zero exit on error.
+//// Side effects: Reads files when executing pipeline helpers; prints to stdout/stderr.
+//// Invariants:
+////  - No business logic: call pipeline/core only.
+////  - JSON mode must be machine-friendly and stable.
+////  - Keep file under 400 LOC; split subcommands later if needed.
+//// Tests: crates/adapters/cli/tests/*.rs cover parsing and, later, integration.
 
 use clap::{Parser, Subcommand};
 
@@ -24,7 +22,7 @@ pub struct Cli {
 pub enum Command {
     /// Fetch feeds from a seed source (Phase 2: file-only pipeline)
     Fetch {
-        /// Seed file to read (JSON). Defaults to 'feeds.json' if omitted.
+        /// Seed file to read (JSON). Defaults to "feeds.json" if omitted.
         #[arg(long)]
         from: Option<String>,
         /// Repository target (e.g., fs:/var/lib/rssify, sqlite:/path/db.sqlite)
@@ -63,7 +61,7 @@ pub enum Command {
     },
 }
 
-// Public helper so tests do not need `clap::Parser` import.
+/// Public helper so tests can parse without pulling in clap::Parser traits directly.
 pub fn parse_from<I, S>(iter: I) -> Cli
 where
     I: IntoIterator<Item = S>,
@@ -90,7 +88,6 @@ fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
         } => {
             // Validate repository seam early (even if unused in Phase 2).
             if let Some(s) = store.as_deref() {
-                // Accept both absolute and relative targets; only format is validated.
                 let _spec = spec::RepoSpec::parse(s).map_err(|why| {
                     format!("invalid --store {:?}: {}", s, why)
                 })?;
