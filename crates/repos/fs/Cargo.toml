@@ -1,15 +1,20 @@
-# File: crates/repos/fs/Cargo.toml
+# crates/repos/fs/Cargo.toml
+
 [package]
 name = "rssify-repo-fs"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Filesystem adapter for rssify (Phase 2)"
+description = "Filesystem repository adapter for rssify"
+repository.workspace = true
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+rssify-core = { path = "../../core" }
+thiserror = { workspace = true }
 
 [dev-dependencies]
+# tests under this crate also import core types directly
 rssify-core = { path = "../../core" }

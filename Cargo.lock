@@ -175,6 +175,7 @@ dependencies = [
  "rssify-core",
  "serde",
  "serde_json",
+ "thiserror",
 ]
 
 [[package]]

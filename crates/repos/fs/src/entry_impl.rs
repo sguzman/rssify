@@ -1,8 +1,10 @@
-// File: crates/repos/fs/src/entry_impl.rs
-// Purpose: EntryRepo impl for FsRepo.
-// Inputs: rssify_core EntryRepo trait and model types.
-// Outputs: JSON per entry with by-id and by-feed indexing.
-// Side effects: Filesystem I/O.
+/*
+File: crates/repos/fs/src/entry_impl.rs
+Purpose: EntryRepo impl for FsRepo.
+Inputs: rssify_core::{Entry, EntryId, EntryRepo, FeedId, RepoError}; util read/write helpers.
+Outputs: JSON files under by_id and by_feed.
+Side effects: Filesystem I/O.
+*/
 
 use crate::repo::FsRepo;
 use crate::util::{read_json, write_atomic_json};
@@ -11,20 +13,12 @@ use rssify_core::{Entry, EntryId, EntryRepo, FeedId, RepoError};
 impl EntryRepo for FsRepo {
     type Tx<'a> = crate::tx::FsTx where Self: 'a;
 
-    fn get<'a>(
-        &'a self,
-        _tx: Option<&'a Self::Tx<'a>>,
-        id: &EntryId,
-    ) -> Result<Entry, RepoError> {
+    fn get<'a>(&'a self, _tx: Option<&'a Self::Tx<'a>>, id: &EntryId) -> Result<Entry, RepoError> {
         let p = self.entry_by_id_path(id);
         read_json::<Entry>(&p)
     }
 
-    fn upsert<'a>(
-        &'a self,
-        _tx: Option<&'a Self::Tx<'a>>,
-        entry: &Entry,
-    ) -> Result<(), RepoError> {
+    fn upsert<'a>(&'a self, _tx: Option<&'a Self::Tx<'a>>, entry: &Entry) -> Result<(), RepoError> {
         let by_id = self.entry_by_id_path(&entry.id);
         let by_feed = self.entry_by_feed_path(&entry.feed, &entry.id);
         write_atomic_json(&by_id, entry)?;
@@ -52,6 +46,7 @@ impl EntryRepo for FsRepo {
                 }
             }
         }
+        // Deterministic order: published_ts, updated_ts, then id
         out.sort_by(|a, b| {
             a.published_ts
                 .cmp(&b.published_ts)

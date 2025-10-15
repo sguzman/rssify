@@ -1,99 +1,86 @@
-//// File: crates/adapters/cli/src/repo_fs.rs
-//// Role: Filesystem path helpers referenced by tests (no I/O here).
+/*
+Module: rssify_cli::repo_fs
+Purpose: Filesystem repository layout helpers (pure; no I/O)
+Public API surface: FsPaths::{feed_dir, feed_json, last_blob, entry_json}
+Invariants:
+- Filenames are derived only from canonical ID strings (FeedId/EntryId::as_str).
+- Path components are URL-safe via a local percent-encoder.
+- No filesystem access; string building only.
+*/
 
+#![allow(dead_code)]
+
+use std::path::Path;
 use rssify_core::{EntryId, FeedId};
-use std::path::{Path, PathBuf};
 
-pub struct FsPaths;
-
-impl FsPaths {
-    /// <root>/feeds/<feed_id>
-    pub fn feed_dir(root: &str, feed: &FeedId) -> String {
-        Path::new(root)
-            .join("feeds")
-            .join(escape_id(feed.as_str()))
-            .to_string_lossy()
-            .into_owned()
+fn urlsafe_component(s: &str) -> String {
+    fn is_safe(b: u8) -> bool {
+        matches!(
+            b,
+            b'0'..=b'9' | b'a'..=b'z' | b'A'..=b'Z' | b'-' | b'_' | b'.'
+        )
     }
-
-    /// <root>/feeds/<feed_id>/feed.json
-    pub fn feed_json(root: &str, feed: &FeedId) -> String {
-        Path::new(&Self::feed_dir(root, feed))
-            .join("feed.json")
-            .to_string_lossy()
-            .into_owned()
-    }
-
-    /// <root>/entries/by_id/<entry_id>.json
-    pub fn entry_id_file(root: &str, entry: &EntryId) -> String {
-        Path::new(root)
-            .join("entries")
-            .join("by_id")
-            .join(format!("{}.json", escape_id(entry.as_str())))
-            .to_string_lossy()
-            .into_owned()
-    }
-
-    /// <root>/entries/by_feed/<feed_id>
-    pub fn entry_by_feed_dir(root: &str, feed: &FeedId) -> String {
-        Path::new(root)
-            .join("entries")
-            .join("by_feed")
-            .join(escape_id(feed.as_str()))
-            .to_string_lossy()
-            .into_owned()
-    }
-
-    /// <root>/entries/by_feed/<feed_id>/<entry_id>.json
-    pub fn entry_by_feed_file(root: &str, feed: &FeedId, entry: &EntryId) -> String {
-        Path::new(&Self::entry_by_feed_dir(root, feed))
-            .join(format!("{}.json", escape_id(entry.as_str())))
-            .to_string_lossy()
-            .into_owned()
-    }
-
-    /// Alias expected by older tests for the schedule path:
-    /// <root>/schedule/<feed_id>/last_ok.txt
-    pub fn last_blob(root: &str, feed: &FeedId) -> String {
-        Self::schedule_last_ok(root, feed)
-    }
-
-    /// <root>/schedule/<feed_id>/last_ok.txt
-    pub fn schedule_last_ok(root: &str, feed: &FeedId) -> String {
-        Path::new(root)
-            .join("schedule")
-            .join(escape_id(feed.as_str()))
-            .join("last_ok.txt")
-            .to_string_lossy()
-            .into_owned()
-    }
-
-    /// Alias expected by older tests for by-feed entry JSON path.
-    pub fn entry_json(root: &str, feed: &FeedId, entry: &EntryId) -> String {
-        Self::entry_by_feed_file(root, feed, entry)
-    }
-}
-
-fn escape_id(id: &str) -> String {
-    let mut out = String::with_capacity(id.len());
-    for b in id.bytes() {
-        let c = b as char;
-        if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
-            out.push(c);
+    let mut out = String::with_capacity(s.len());
+    for &b in s.as_bytes() {
+        if is_safe(b) {
+            out.push(b as char);
         } else {
-            out.push('_');
-            out.push(hex(b >> 4));
-            out.push(hex(b & 0x0F));
+            out.push('%');
+            out.push_str(&format!("{:02X}", b));
         }
     }
     out
 }
 
-fn hex(n: u8) -> char {
-    match n {
-        0..=9 => (b'0' + n) as char,
-        10..=15 => (b'a' + (n - 10)) as char,
-        _ => '?',
+fn join_to_string(parts: &[&str]) -> String {
+    let mut p = Path::new(parts[0]).to_path_buf();
+    for seg in &parts[1..] {
+        p = p.join(seg);
+    }
+    p.to_string_lossy().into_owned()
+}
+
+pub struct FsPaths;
+
+impl FsPaths {
+    pub fn feed_dir(root: &str, feed: &FeedId) -> String {
+        join_to_string(&[root, "feeds", &urlsafe_component(feed.as_str())])
+    }
+
+    pub fn feed_json(root: &str, feed: &FeedId) -> String {
+        join_to_string(&[&Self::feed_dir(root, feed), "feed.json"])
+    }
+
+    pub fn entry_id_file(root: &str, entry: &EntryId) -> String {
+        join_to_string(&[
+            root,
+            "entries",
+            "by_id",
+            &format!("{}.json", urlsafe_component(entry.as_str())),
+        ])
+    }
+
+    pub fn entry_by_feed_dir(root: &str, feed: &FeedId) -> String {
+        join_to_string(&[root, "entries", "by_feed", &urlsafe_component(feed.as_str())])
+    }
+
+    pub fn entry_by_feed_file(root: &str, feed: &FeedId, entry: &EntryId) -> String {
+        join_to_string(&[
+            &Self::entry_by_feed_dir(root, feed),
+            &format!("{}.json", urlsafe_component(entry.as_str())),
+        ])
+    }
+
+    pub fn last_blob(root: &str, feed: &FeedId) -> String {
+        Self::schedule_last_ok(root, feed)
+    }
+
+    pub fn schedule_last_ok(root: &str, feed: &FeedId) -> String {
+        join_to_string(&[root, "schedule", &urlsafe_component(feed.as_str()), "last_ok.txt"])
+    }
+
+    pub fn entry_json(root: &str, feed: &FeedId, entry: &EntryId) -> String {
+        Self::entry_by_feed_file(root, feed, entry)
     }
 }
 

@@ -1,9 +1,21 @@
-//// File: crates/repos/fs/src/lib.rs
-//// Role: Module hub and public surface for the filesystem repo adapter.
+/* 
+File: crates/repos/fs/src/lib.rs
+Purpose: Module glue and public re-exports for the filesystem repository adapter.
+Inputs: rssify_core traits and types.
+Outputs: Public FsRepo and FsTx types; trait impls are in submodules.
+Side effects: None here.
+Invariants:
+ - Keep this file minimal and under 200 LOC.
+ - All heavy logic lives in dedicated modules.
+*/
 
-pub mod repo;
-pub mod util;
+mod tx;
+mod util;
+mod repo;
+mod feed_impl;
+mod entry_impl;
+mod schedule_impl;
 
-pub use crate::repo::FsRepo;
-pub use crate::util::{escape_id, unescape_id, write_json_atomic, write_text_atomic};
+pub use repo::FsRepo;
+pub use tx::FsTx;
 

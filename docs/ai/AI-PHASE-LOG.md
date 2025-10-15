@@ -95,7 +95,7 @@ Follow-ups:
 - Extend stats with per-feed entry counts and size metrics.
 - Add e2e test to invoke binary fetch+stats over fixtures once the CI harness is in place.
 
-## Phase 2 - follow up
+### Phase 2 - follow up
 
 - Split repo code into modules:
   - lib.rs: thin module hub (pub use FsRepo and utilities).
@@ -113,4 +113,10 @@ Follow-ups:
 - Fix: FsPaths now returns String and includes last_blob/entry_json to match path-shape tests.
 - Fix: add FsRepo::new alias; add dev-dep rssify-core for repo-fs tests.
 
-
+### Phase 2 log — fs adapter trait impls (2025-10-15)
+- Implemented rssify_core traits for FsRepo:
+  - FeedRepo (get/put/list → JSON under feeds/<id>/feed.json).
+  - EntryRepo (get/upsert/list_by_feed → JSON under entries/by_id and entries/by_feed).
+  - ScheduleRepo (last_ok_fetch_ts/record_fetch_ts → schedule/<id>/last_ok.txt).
+- Added FsTx and begin_tx() to match core::Tx and tests.
+- Centralized JSON IO + ID escaping in util.rs; split files for clarity.
