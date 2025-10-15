@@ -1,27 +1,38 @@
 /*
-File: crates/repos/fs/test/roundtrip.rs
+File: crates/repos/fs/tests/roundtrip.rs
 Purpose: Round-trip tests for FsRepo implementing core repo traits.
 Inputs: FsRepo; rssify_core domain types and traits.
-Outputs: Asserts on RepoError results; creates temp dirs.
-Side effects: Filesystem I/O in a tempdir.
+Outputs: Asserts on RepoError results; creates unique temp dirs.
+Side effects: Filesystem I/O in a temp dir (not deleted).
 Invariants:
- - Tests do not depend on external network.
- - Each test uses a fresh temp directory.
+ - No network.
+ - Each test uses a fresh directory name with pid+nanos to avoid collisions.
 */
 
 use rssify_core::{
     ContentBlob, ContentKind, Entry, EntryId, EntryRepo, Feed, FeedId, FeedRepo, ScheduleRepo,
 };
 use rssify_repo_fs::FsRepo;
+use std::fs;
+use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 
-fn temp_root() -> tempfile::TempDir {
-    tempfile::tempdir().expect("tempdir")
+fn temp_root() -> PathBuf {
+    let mut p = std::env::temp_dir();
+    let pid = std::process::id();
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .subsec_nanos();
+    p.push(format!("rssify-fsrepo-{}-{}", pid, nanos));
+    fs::create_dir_all(&p).expect("create temp dir");
+    p
 }
 
 #[test]
 fn feed_roundtrip_and_list() {
     let root = temp_root();
-    let repo = FsRepo::new(root.path());
+    let repo = FsRepo::new(&root);
     let f1 = Feed {
         id: FeedId::from_url("https://example.com/feed"),
         url: "https://example.com/feed".into(),
@@ -54,7 +65,7 @@ fn feed_roundtrip_and_list() {
 #[test]
 fn entry_roundtrip_and_scan() {
     let root = temp_root();
-    let repo = FsRepo::new(root.path());
+    let repo = FsRepo::new(&root);
     let feed = Feed {
         id: FeedId::from_url("https://ex.com/rss"),
         url: "https://ex.com/rss".into(),
@@ -112,7 +123,7 @@ fn entry_roundtrip_and_scan() {
 #[test]
 fn schedule_record_and_read() {
     let root = temp_root();
-    let repo = FsRepo::new(root.path());
+    let repo = FsRepo::new(&root);
     let feed = FeedId::from_url("https://ex.com/rss");
     assert_eq!(
         ScheduleRepo::last_ok_fetch_ts(&repo, None, &feed).expect("none yet"),
