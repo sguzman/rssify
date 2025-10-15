@@ -180,3 +180,28 @@ Follow-ups:
 - Change: Added `resolve_store_spec_with_env(getter, flag)` so tests can inject a fake environment; `resolve_store_spec` now delegates to it.
 - Why: Avoid mutating process environment in tests and keep unit tests outside `src/`.
 
+### Phase 3 log (2025-10-15)
+
+Scope: CLI ergonomics, repo handling, logging, seed format tolerance, and consistent defaults.
+
+Changes
+- P3-T1: Centralized repo selection by wiring `--store` through `spec::RepoSpec` in the CLI. This removes duplicate prefix parsing and prepares for future backends.
+- P3-T2: `rssify stats` now counts entries in the canonical per-feed layout `feeds/<feed>/entries/*.json` and includes legacy `entries/by_id/*.json` for compatibility.
+- P3-T3: Added a tiny structured logger (`key=value`) in `adapters/cli/src/log.rs`. Logs go to stderr; stdout is for human output or `--json`. Verbosity: default warn, `-v` info, `-vv` debug.
+- P3-T4: Made seed loading tolerant to common shapes:
+  1) array of strings,
+  2) array of objects (prefers `id`, then `url`, then `guid`),
+  3) object with `seeds` holding either of the above.
+  Restored test-facing types and `fetch_from_file` to keep tests stable.
+- P3-T5: Unified repo defaults with precedence `--store` flag > `RSSIFY_REPO` env var > `fs:.`. Implemented via `store::resolve_store_spec` and an injectable `resolve_store_spec_with_env` for tests. Moved tests out of `src/`.
+
+Why
+- Enforce single-responsibility CLI, consolidate parsing, comply with AI-FRIENDLY logging rule, and improve DX by accepting common seed fixtures and consistent repo defaults.
+
+Follow-ups
+- Add non-FS backends (e.g., sqlite) and wire them via `RepoSpec`.
+- Eventually drop legacy `entries/by_id` scan when all data is migrated.
+- Consider promoting the minimal logger to a shared crate if other adapters need it.
+- Optionally support newline-delimited seed files as a convenience.
+- Consider a project-local config file for defaults beyond `RSSIFY_REPO`.
+
