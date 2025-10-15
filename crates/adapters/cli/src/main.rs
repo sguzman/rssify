@@ -5,7 +5,7 @@
 // Inputs/Outputs: Reads flags/subcommands via clap; prints user-facing output (text or JSON) to stdout.
 // Invariants: Repo selection is parsed via spec::RepoSpec; logs go to stderr.
 // Examples: `rssify fetch --from feeds.json --store fs:./data --json`
-// Task: Keep under 300 LOC; split if orchestration grows. No tests in this file (tests live under test/).
+// Task: Keep under 300 LOC; split if orchestration grows. No tests in this file (tests live under tests/).
 
 use clap::{Parser, Subcommand};
 use serde_json::json;

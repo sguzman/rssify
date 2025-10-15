@@ -205,3 +205,15 @@ Follow-ups
 - Optionally support newline-delimited seed files as a convenience.
 - Consider a project-local config file for defaults beyond `RSSIFY_REPO`.
 
+## Phase 4 log — P4-T1 (2025-10-15)
+
+- Change: Standardized test placement to `tests/` across the workspace.
+  - Updated AI-FRIENDLY and the CLI `main.rs` header comment to reference `tests/`.
+  - Ensured `crates/core/tests/` and `crates/repos/fs/tests/` exist (placeholders added).
+- Why: Align with the project’s explicit rule (“tests live under tests”) and avoid confusion with tooling and contributors.
+- Notes:
+  - Any prior references to `test/` are obsolete and superseded by this change.
+  - Doctests remain encouraged for public modules; integration and property tests live in `tests/`.
+- Follow-ups:
+  - Sweep any remaining docs or READMEs for the old `test/` wording and update if encountered during future tasks.
+
