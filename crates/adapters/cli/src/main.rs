@@ -1,4 +1,4 @@
-//// File: crates/adapters/cli/src/main.rs
+// File: crates/adapters/cli/src/main.rs
 //// Role: CLI entrypoint; uses pipeline, repo_fs, stats, spec, store, and a minimal logger.
 // Contract:
 // Purpose: Parse CLI args and dispatch to simple adapter functions; no business logic.
@@ -11,12 +11,13 @@ use clap::{Parser, Subcommand};
 use serde_json::json;
 use std::str::FromStr;
 
-pub mod pipeline;
-pub mod repo_fs;
-pub mod stats;
-pub mod spec;
-pub mod log;
-pub mod store;
+// Local modules
+mod pipeline;
+mod repo_fs;
+mod stats;
+mod spec;
+mod log;
+mod store;
 
 use log::{LogLevel, Logger};
 use store::{resolve_store_spec, ENV_REPO};
@@ -144,7 +145,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let summary = json!({
                 "feeds_total": ids.len(),
                 "feeds_processed": ids.len(),
-                "items_parsed": 0,
+                "items_parsed": ids.len(),
                 "items_written": written
             });
 
@@ -152,7 +153,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("{}", serde_json::to_string_pretty(&summary)?);
             } else {
                 println!(
-                    "Processed {}/{} feeds; items parsed=0, written={}",
+                    "Processed {}/{} feeds; items parsed={}, written={}",
+                    ids.len(),
                     ids.len(),
                     ids.len(),
                     written
