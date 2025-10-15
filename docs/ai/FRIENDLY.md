@@ -37,7 +37,7 @@ This guide defines an iteration loop and repo/file conventions that make AI agen
 
    * Choose or create exactly one file to modify.
    * Add or update the top-of-file header contract (template below).
-   * Write or update 1-3 focused tests the change must pass (tests live in test/).
+   * Write or update 1-3 focused tests the change must pass (tests live in tests/).
 
 2. Generate once
 
