@@ -28,7 +28,9 @@ impl ScheduleRepo for FsRepo {
         if trimmed.is_empty() {
             return Ok(None);
         }
-        let ts: i64 = trimmed.parse().map_err(|e| RepoError::Backend(e.to_string()))?;
+        let ts = trimmed
+            .parse::<i64>()
+            .map_err(|e| RepoError::Backend(e.to_string()))?;
         Ok(Some(ts))
     }
 
