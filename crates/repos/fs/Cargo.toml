@@ -10,3 +10,6 @@ description = "Filesystem adapter for rssify (Phase 2)"
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+
+[dev-dependencies]
+rssify-core = { path = "../../core" }

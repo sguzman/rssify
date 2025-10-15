@@ -21,6 +21,11 @@ impl FsRepo {
         Self { root: pb }
     }
 
+    /// Alias used by some tests.
+    pub fn new<P: AsRef<Path>>(root: P) -> Self {
+        Self::open(root)
+    }
+
     // ---------- path helpers ----------
     fn feeds_dir(&self) -> PathBuf {
         self.root.join("feeds")

@@ -105,8 +105,12 @@ Follow-ups:
 - Outcome: smaller files, clearer responsibilities, clean build.
 - Fix: removed erroneous re-export of load_feed_seeds from the CLI main to resolve E0364 in a binary crate.
 - Fix: restore public pipeline and repo_fs modules for CLI tests.
-  - pipeline.rs: exposes FetchSummary and load_feed_seeds, with thiserror-based errors.
-  - repo_fs.rs: exposes FsPaths path builders used by path-shape tests.
-  - main.rs: adds parse_from for CLI parsing tests.
-  - Cargo.toml: add rssify-core and thiserror deps back to cli crate.
+- pipeline.rs: exposes FetchSummary and load_feed_seeds, with thiserror-based errors.
+- repo_fs.rs: exposes FsPaths path builders used by path-shape tests.
+- main.rs: adds parse_from for CLI parsing tests.
+- Cargo.toml: add rssify-core and thiserror deps back to cli crate.
+- Fix: make pipeline helpers public and path-friendly for tests; provide fetch_from_file, FeedSeed, FeedMetaDelta, PersistStats.
+- Fix: FsPaths now returns String and includes last_blob/entry_json to match path-shape tests.
+- Fix: add FsRepo::new alias; add dev-dep rssify-core for repo-fs tests.
+
 
