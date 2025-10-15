@@ -103,5 +103,7 @@ Follow-ups:
   - util.rs: escape_id/unescape_id and atomic write helpers.
 - Fixed a compile error in unescape_id and corrected CLI to call repo.put_feed_json(...).
 - Outcome: smaller files, clearer responsibilities, clean build.
+- Fix: removed erroneous re-export of load_feed_seeds from the CLI main to resolve E0364 in a binary crate.
+
 
 

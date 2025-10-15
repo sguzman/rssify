@@ -1,6 +1,6 @@
-
 //// File: crates/adapters/cli/src/main.rs
-//// Purpose: CLI entrypoint with Phase 2 wiring for fetch and stats (filesystem-only).
+//// Note: Remove erroneous re-export of load_feed_seeds (E0364).
+
 use clap::{Parser, Subcommand};
 use serde_json::json;
 
@@ -15,29 +15,22 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// Fetch feeds from a seed source (Phase 2: file-only, no network).
     Fetch {
-        /// Seed file to read (JSON). Defaults to "feeds.json" if omitted.
         #[arg(long)]
         from: Option<String>,
-        /// Repository target (fs:<root>).
         #[arg(long)]
         store: Option<String>,
-        /// Emit machine-readable JSON.
         #[arg(long)]
         json: bool,
-        /// Increase verbosity (-v, -vv).
         #[arg(short, long, action = clap::ArgAction::Count)]
         verbose: u8,
     },
-    /// Show repository stats (Phase 2: filesystem only).
     Stats {
         #[arg(long)]
         store: String,
         #[arg(long)]
         json: bool,
     },
-    /// Stubs kept for later phases.
     Import {
         #[arg(long)]
         file: Option<String>,
@@ -59,22 +52,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     match cli.command {
-        Command::Fetch {
-            from,
-            store,
-            json,
-            verbose,
-        } => {
+        Command::Fetch { from, store, json, verbose } => {
             let seed_path = from.unwrap_or_else(|| "feeds.json".to_string());
             let ids = load_feed_seeds(&seed_path)
                 .map_err(|e| format!("failed to parse seeds: {}", e))?;
 
             let mut written = 0usize;
             if let Some(store) = store {
-                // Expect fs:<root>
                 if let Some(root) = store.strip_prefix("fs:") {
                     let repo = rssify_repo_fs::FsRepo::open(root);
-                    // For Phase 2, persist minimal feed records; no network, no entries.
                     for id in &ids {
                         let feed_obj = json!({
                             "id": id,
@@ -85,7 +71,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             "last_modified": null,
                             "active": true
                         });
-                        if rssify_repo_fs::FsRepo::put_feed_json(&repo, id, &feed_obj).is_ok() {
+                        if repo.put_feed_json(id, &feed_obj).is_ok() {
                             written += 1;
                         }
                     }
@@ -170,7 +156,6 @@ fn load_feed_seeds(path: &str) -> Result<Vec<String>, Box<dyn std::error::Error>
                 match item {
                     serde_json::Value::String(s) => out.push(s),
                     serde_json::Value::Object(mut m) => {
-                        // Prefer explicit id when present; else fall back to url.
                         if let Some(idv) = m.remove("id") {
                             if let Some(id) = idv.as_str() {
                                 out.push(id.to_string());
@@ -192,10 +177,5 @@ fn load_feed_seeds(path: &str) -> Result<Vec<String>, Box<dyn std::error::Error>
     }
 
     Ok(out)
-}
-
-// Re-export for tests or other crates if needed.
-pub mod reexports {
-    pub use super::load_feed_seeds;
 }
 
