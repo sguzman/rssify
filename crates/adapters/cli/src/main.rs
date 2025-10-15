@@ -11,13 +11,13 @@ use clap::{Parser, Subcommand};
 use serde_json::json;
 use std::str::FromStr;
 
-// Local modules
-mod pipeline;
-mod repo_fs;
-mod stats;
-mod spec;
-mod log;
-mod store;
+// Local modules (public so tests and other crates can import as needed)
+pub mod pipeline;
+pub mod repo_fs;
+pub mod stats;
+pub mod spec;
+pub mod log;
+pub mod store;
 
 use log::{LogLevel, Logger};
 use store::{resolve_store_spec, ENV_REPO};
