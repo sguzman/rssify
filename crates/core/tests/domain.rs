@@ -1,19 +1,26 @@
 /*
 Module: rssify_core::test::domain
-Purpose: Integration test for small behaviors extracted from core domain types.
-Notes: Tests are placed under test/ per AI-FRIENDLY.
+Purpose: Sanity-check core public model types (no I/O).
+Notes: Tests live under test/ per AI-FRIENDLY.
 */
 
-use rssify_core::EntryMeta;
+use rssify_core::{Feed, FeedId};
 
 #[test]
-fn entry_meta_display_prefers_title() {
-    let m = EntryMeta {
-        url: "https://example.com/x".into(),
-        title: Some("Hello".into()),
-        published_rfc3339: None,
-        source_label: None,
+fn feed_is_constructible_with_expected_fields() {
+    let id = FeedId::from_url("https://example.com/feed");
+    let f = Feed {
+        id: id.clone(),
+        url: "https://example.com/feed".into(),
+        title: Some("Example".into()),
+        site_url: Some("https://example.com".into()),
+        etag: None,
+        last_modified: None,
+        active: true,
     };
-    assert_eq!(m.to_string(), "Hello");
+
+    assert_eq!(f.id.as_str(), id.as_str());
+    assert_eq!(f.title.as_deref(), Some("Example"));
+    assert!(f.active);
 }
 

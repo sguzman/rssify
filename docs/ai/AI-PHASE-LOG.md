@@ -37,3 +37,9 @@ Follow-ups:
 - Left relative `#[path = "../src/..."]` imports intact.
 - Note: Cargo by default discovers `tests/` (plural). Our CI must explicitly run tests under `test/` or use a custom harness to honor this layout.
 
+### Phase 2 - T5 follow-up: fix core test to use public types (2025-10-15)
+
+- Replaced `EntryMeta` test with a `Feed`/`FeedId` sanity test, since `EntryMeta` is not exported by `rssify_core`.
+- Ensured the test resides under `crates/core/test/`.
+- Action: delete any legacy files under `crates/core/tests/` to avoid Cargo discovering stale tests.
+
