@@ -8,11 +8,14 @@ pub mod pipeline;
 pub mod repo_fs;
 pub mod stats;
 
+#[derive(Debug, Parser)]
+#[command(name = "rssify", version, about = "RSS toolkit CLI")]
+pub struct Cli {
     #[command(subcommand)]
-    cmd: Command,
+    pub command: Command,
 }
 
-#[derive(clap::Subcommand, Debug)]
+#[derive(Debug, Subcommand)]
 pub enum Command {
     /// Fetch feeds from a seed source (Phase 2: file-only, no network).
     Fetch {
@@ -54,29 +57,15 @@ pub enum Command {
         #[arg(long)]
         json: bool,
     },
-    Stats {},
-    Import {},
-    Add {},
-}
-
-fn main() -> ExitCode {
-    let cli = Cli::parse();
-    match run(cli) {
-        Ok(()) => ExitCode::SUCCESS,
-        Err(e) => {
-            eprintln!("error: {e}");
-            ExitCode::from(1)
-        }
-    }
 }
 
 /// Public helper used by tests to exercise clap parsing without exec.
 pub fn parse_from<I, S>(iter: I) -> Cli
 where
-    I: IntoIterator<Item = T>,
-    T: Into<std::ffi::OsString> + Clone,
+    I: IntoIterator<Item = S>,
+    S: Into<std::ffi::OsString> + Clone,
 {
-    Cli::try_parse_from(iter)
+    Cli::parse_from(iter)
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
