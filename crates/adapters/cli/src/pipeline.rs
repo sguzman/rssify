@@ -7,6 +7,9 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
+// Core types referenced by tests
+use rssify_core::FeedId;
+
 /// Summary returned by fetch routines (Phase 2: no network).
 #[derive(Debug, Serialize, Deserialize, Default, Clone, PartialEq, Eq)]
 pub struct FetchSummary {
@@ -16,20 +19,30 @@ pub struct FetchSummary {
     pub items_written: u32,
 }
 
-/// Minimal types that tests reference in Phase 2.
+/// Test-facing: seed item (string or object in JSON fixtures).
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct FeedSeed {
-    pub id: String,
+    pub url: String,
+    pub title_hint: Option<String>,
 }
+
+/// Test-facing: metadata changes detected for a feed.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct FeedMetaDelta {
-    pub id: String,
-    pub changed: bool,
+    pub title: Option<String>,
+    pub site_url: Option<String>,
+    pub etag: Option<String>,
+    pub last_modified: Option<String>,
 }
+
+/// Test-facing: persistence counters for a single feed operation.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Default)]
 pub struct PersistStats {
-    pub feeds_written: u32,
-    pub entries_written: u32,
+    pub feed: FeedId,
+    pub items_written: u32,
+    pub elapsed_ms: u64,
+    pub not_modified: bool,
+    pub failure_hint: Option<String>,
 }
 
 #[derive(thiserror::Error, Debug)]
