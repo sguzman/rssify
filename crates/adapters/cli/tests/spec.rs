@@ -1,10 +1,6 @@
 /*
-Module: rssify_cli::tests::spec
+Module: rssify_cli::test::spec
 Purpose: Validate repo spec parsing (no I/O, no backend behavior)
-Public API surface: tests only
-Invariants: Spec is stable and rejects malformed inputs
-Logging keys used: component, op, feed_id, elapsed_ms, items
-Notes: Test files may exceed header rules; scripts skip /tests/.
 */
 
 #[path = "../src/spec.rs"]
@@ -19,7 +15,7 @@ fn parses_fs_and_sqlite_specs() {
     assert_eq!(fs.kind, RepoKind::Fs);
     assert_eq!(fs.target, "/var/lib/rssify");
 
-    let fs_rel = RepoSpec::from_str("Fs:./data").unwrap(); // case-insensitive
+    let fs_rel = RepoSpec::from_str("Fs:./data").unwrap();
     assert_eq!(fs_rel.kind, RepoKind::Fs);
     assert_eq!(fs_rel.target, "./data");
 
@@ -35,3 +31,4 @@ fn rejects_bad_specs() {
     assert!(RepoSpec::from_str("sqlite").is_err());
     assert!(RepoSpec::from_str("nocolon").is_err());
 }
+

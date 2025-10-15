@@ -1,5 +1,5 @@
 /*
-Location: crates/core/tests/repo_trait.rs
+Location: crates/core/test/repo_trait.rs
 Purpose: Compile-time and runtime sanity checks for core repo traits.
 Notes: In-memory dummy backend; no I/O; validates trait signatures.
 */

@@ -30,3 +30,10 @@ Follow-ups:
 - Split subcommand handlers into dedicated files ("cmd_fetch.rs", etc.) once logic grows.
 - Add integration test to exercise "rssify fetch --json" with fixtures.
 
+## Phase 2 - T5 Move tests under test/ and remove co-located tests (2025-10-15)
+
+- Moved all crate-level integration tests from `tests/` to `test/` per AI-FRIENDLY.
+- Extracted co-located unit tests from `crates/core/src/domain.rs` into `crates/core/test/domain.rs`.
+- Left relative `#[path = "../src/..."]` imports intact.
+- Note: Cargo by default discovers `tests/` (plural). Our CI must explicitly run tests under `test/` or use a custom harness to honor this layout.
+

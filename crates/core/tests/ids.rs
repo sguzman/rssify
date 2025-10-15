@@ -1,10 +1,6 @@
 /*
-Module: rssify_core::tests::ids
-Purpose: Minimal tests to lock ID policy; golden fixtures to be added later
-Public API surface: tests only
-Invariants: Deterministic and precedence-respecting identifiers
-Logging keys used: component, op, feed_id, elapsed_ms, items
-Notes: Test files may exceed header rules; scripts skip /tests/.
+Module: rssify_core::test::ids
+Purpose: Minimal tests to lock ID policy; golden fixtures to be added later.
 */
 
 use rssify_core::{EntryId, FeedId};
@@ -18,13 +14,7 @@ fn feed_id_from_url_is_prefixed_and_trimmed() {
 #[test]
 fn entry_id_prefers_guid() {
     let feed = FeedId::from_url("https://ex.com/feed");
-    let e = EntryId::from_parts(
-        &feed,
-        Some("G-123"),
-        Some("https://ex.com/p"),
-        Some("t"),
-        Some(1),
-    );
+    let e = EntryId::from_parts(&feed, Some("G-123"), Some("https://ex.com/p"), Some("t"), Some(1));
     assert_eq!(e.as_str(), "guid:G-123");
 }
 
@@ -51,9 +41,3 @@ fn entry_id_hash_changes_when_inputs_change() {
     assert_ne!(a, b);
 }
 
-// Placeholder for future golden tests using testdata fixtures.
-// #[test]
-// #[ignore]
-// fn golden_examples_match_expected_snapshots() {
-//     // Read fixtures from tests/testdata/ and compare against saved snapshots.
-// }
