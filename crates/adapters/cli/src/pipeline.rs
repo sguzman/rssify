@@ -1,51 +1,117 @@
 /*
 Module: rssify_cli::pipeline
-Purpose: Document the Phase 1 fetch+persist pipeline surfaces (no logic)
-Public API surface: type aliases and TODOs for step-by-step implementation
-Invariants: Adapters remain thin; core types drive IDs and records
-Logging keys used: component, op, feed_id, elapsed_ms, items
-Notes: Keep file <= 200 LOC if possible; refactor at 300.
+Purpose: Pure, no-network pipeline utilities for Phase 2
+Public API:
+  - load_feed_seeds(path) -> Result<Vec<FeedId>, PipelineError>
+  - fetch_from_file(path) -> Result<FetchSummary, PipelineError>
+Notes:
+  - No I/O writes; only reads the given JSON file.
+  - Keeps types minimal and stable for CLI JSON printing later.
+  - Accepts flexible seed formats to reduce friction.
 */
 
-#![allow(dead_code)]
+use rssify_core::FeedId;
+use std::fs;
+use std::path::Path;
 
-use rssify_core::{ContentBlob, ContentKind, Entry, EntryId, Feed, FeedId, FetchOutcome};
-
-/// Phase 1 pipeline plan (no code yet):
-/// 1) load_feeds(from) -> Vec<FeedSeed>
-/// 2) fetch_feed(seed) -> FetchOutcome
-/// 3) parse_blob(seed.feed_id, blob) -> (FeedMetaDelta, Vec<Entry>)
-/// 4) persist_fs(root, feed_delta, entries) -> PersistStats
-/// 5) aggregate metrics and emit CLI-friendly summary
-
-/// A minimal seed parsed from feeds.json.
-pub struct FeedSeed {
-    pub url: String,
-    pub title_hint: Option<String>,
+#[derive(thiserror::Error, Debug)]
+pub enum PipelineError {
+    #[error("input file not found: {0}")]
+    NotFound(String),
+    #[error("failed to read file {path}: {source}")]
+    Io { path: String, source: std::io::Error },
+    #[error("invalid JSON in {path}: {source}")]
+    Json { path: String, source: serde_json::Error },
+    #[error("no seeds found in {0}")]
+    Empty(String),
 }
 
-/// Minimal feed metadata delta detected after a successful fetch/parse.
-pub struct FeedMetaDelta {
-    pub title: Option<String>,
-    pub site_url: Option<String>,
-    pub etag: Option<String>,
-    pub last_modified: Option<String>,
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub struct FetchSummary {
+    pub feeds_total: u32,
+    pub feeds_processed: u32,
+    pub items_parsed: u32,
+    pub items_written: u32,
 }
 
-/// Persist summary for metrics and CLI reporting.
-pub struct PersistStats {
-    pub feed: FeedId,
-    pub items_written: usize,
-    pub elapsed_ms: u64,
-    pub not_modified: bool,
-    pub failure_hint: Option<String>,
+/// Supported seed shapes (flexible):
+/// 1) ["https://site/a.xml", "https://site/b.xml"]
+/// 2) [{"url":"https://..."}, {"id":"custom"}]
+#[derive(serde::Deserialize)]
+#[serde(untagged)]
+enum Seed {
+    Str(String),
+    Obj { url: Option<String>, id: Option<String> },
 }
 
-// TODO(phase1):
-// - Implement `load_feeds` to read feeds.json (pure file read in CLI adapter).
-// - Implement `fetch_feed` using an HTTP client with conditional headers.
-// - Implement `parse_blob` for minimal RSS/Atom fields -> entries + meta delta.
-// - Implement `persist_fs` with idempotent writes under fs:<root>.
-// - Wire `rssify fetch` to iterate seeds and gather stats for --json output.
+/// Load feed seeds from a JSON file and normalize to FeedId values.
+/// Returns Err(Empty) if the file contains zero usable seeds.
+pub fn load_feed_seeds<P: AsRef<Path>>(path: P) -> Result<Vec<FeedId>, PipelineError> {
+    let p = path.as_ref();
+    if !p.exists() {
+        return Err(PipelineError::NotFound(p.display().to_string()));
+    }
+    let raw = fs::read_to_string(p).map_err(|e| PipelineError::Io {
+        path: p.display().to_string(),
+        source: e,
+    })?;
+    let seeds: Vec<Seed> =
+        serde_json::from_str(&raw).map_err(|e| PipelineError::Json {
+            path: p.display().to_string(),
+            source: e,
+        })?;
 
-// NOTE: No business logic in this file yet. Only shapes and plan.
+    let mut out = Vec::with_capacity(seeds.len());
+    for s in seeds {
+        match s {
+            Seed::Str(s) => out.push(normalize_id(&s)),
+            Seed::Obj { url: Some(u), id } => {
+                // Prefer explicit id if present; otherwise use URL-derived ID.
+                out.push(match id {
+                    Some(id) => FeedId::new(&id),
+                    None => FeedId::from_url(&u),
+                });
+            }
+            Seed::Obj { url: None, id: Some(id) } => out.push(FeedId::new(&id)),
+            Seed::Obj { url: None, id: None } => { /* skip unusable */ }
+        }
+    }
+
+    if out.is_empty() {
+        return Err(PipelineError::Empty(p.display().to_string()));
+    }
+    Ok(out)
+}
+
+/// Run a stubbed fetch-parse-persist loop using seeds from a JSON file.
+/// This does not perform network or disk writes. It simulates:
+/// - 1 item parsed per feed
+/// - 1 item written per feed
+pub fn fetch_from_file<P: AsRef<Path>>(path: P) -> Result<FetchSummary, PipelineError> {
+    let seeds = load_feed_seeds(path)?;
+    let feeds_total = seeds.len() as u32;
+
+    // Stubbed loop: pretend each feed yields 1 parsed and 1 written entry.
+    let feeds_processed = feeds_total;
+    let items_parsed = feeds_total;
+    let items_written = feeds_total;
+
+    Ok(FetchSummary {
+        feeds_total,
+        feeds_processed,
+        items_parsed,
+        items_written,
+    })
+}
+
+/// Best-effort ID normalization:
+/// - If it looks like a URL (starts with "http"), use URL-based constructor.
+/// - Otherwise, treat as a literal ID.
+fn normalize_id(s: &str) -> FeedId {
+    if s.starts_with("http://") || s.starts_with("https://") {
+        FeedId::from_url(s)
+    } else {
+        FeedId::new(s)
+    }
+}
+
