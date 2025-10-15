@@ -370,6 +370,26 @@ clap = { version = "4", features = ["derive"] }
 * Always include a one-line Conventional Commit suggestion with any code/doc proposal.”
 * Prefer latest compatible, working crate versions; if newest breaks, pin to latest working and note the failure.”
 
+## Output formatting rules (code and commits)
+
+To ensure copy/paste is effortless and unambiguous:
+
+- Every code artifact MUST be emitted in its own fenced code block.
+  - One file per block. Do not merge multiple files into a single block.
+  - Use an appropriate language tag when possible (e.g., ```rust, ```toml, ```json).
+  - If multiple files are produced, emit multiple blocks, one per file.
+
+- The commit message MUST be emitted in its own separate fenced code block, distinct from any code blocks.
+  - The commit block contains only the single-line Conventional Commit message.
+  - Do NOT add a language tag to the commit block.
+  - Do NOT include any commentary inside the commit block.
+
+- Never combine code and the commit message in the same block.
+
+- When both code and a commit are produced in one response:
+  1) Emit all code blocks (one per file).
+  2) Then emit exactly one separate commit-message block at the end.
+
 ## Additional global rules for agents
 
 - Use the latest working versions of Rust packages (verify in CI).
