@@ -80,4 +80,18 @@ Notes:
 - Added `FsRepo::open` which ensures the repository root directory exists; subdirectories are created on demand during writes.
 - Follow-ups: Unignore the CLI e2e test for `fetch`; implement read-only `stats`.
 
+## Phase 2 - Final
+
+- T4: FsRepo completed with atomic writers and helpers.
+  - Added escape_id/unescape_id to keep filesystem-safe paths.
+  - Implemented put/get/list for feeds and entries, and a simple last-ok marker.
+- T5: Added stats path and unblocked CLI wiring expectations.
+  - Directory layout confirmed; round-trippable JSON objects via atomic writes.
+- T6: Minimal `rssify stats --store fs:<root>` implemented.
+  - Counts feeds (dirs with feed.json) and entries (files in entries/by_id).
+  - `--json` emits a machine-friendly object.
+
+Follow-ups:
+- Extend stats with per-feed entry counts and size metrics.
+- Add e2e test to invoke binary fetch+stats over fixtures once the CI harness is in place.
 

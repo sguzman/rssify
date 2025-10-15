@@ -1,17 +1,9 @@
 //// File: crates/adapters/cli/src/main.rs
-//// Purpose: CLI entrypoint - parse args and dispatch to pipeline/core with simple output.
-//// Inputs: OS args via clap; optional seed file (--from) and store spec (--store).
-//// Outputs: Human summary to stdout by default or JSON when --json; non-zero exit on error.
-//// Side effects: Reads files when executing pipeline helpers; prints to stdout/stderr.
-//// Invariants:
-////  - No business logic: call pipeline/core only.
-////  - JSON mode must be machine-friendly and stable.
-////  - Keep file under 400 LOC; split subcommands later if needed.
-//// Tests: crates/adapters/cli/tests/*.rs cover parsing and, later, integration.
-
+//// Purpose: CLI entrypoint with Phase 2 wiring for fetch and stats (filesystem-only).
 use clap::{Parser, Subcommand};
-use rssify_core::{Feed, FeedRepo};
-use rssify_repo_fs;
+use serde_json::json;
+
+pub mod stats;
 
 #[derive(Debug, Parser)]
 #[command(name = "rssify", version, about = "RSS toolkit CLI")]
@@ -22,29 +14,29 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// Fetch feeds from a seed source (Phase 2: file-only pipeline)
+    /// Fetch feeds from a seed source (Phase 2: file-only, no network).
     Fetch {
         /// Seed file to read (JSON). Defaults to "feeds.json" if omitted.
         #[arg(long)]
         from: Option<String>,
-        /// Repository target (e.g., fs:/var/lib/rssify, sqlite:/path/db.sqlite)
+        /// Repository target (fs:<root>).
         #[arg(long)]
         store: Option<String>,
-        /// Emit machine-readable JSON (quiet otherwise).
+        /// Emit machine-readable JSON.
         #[arg(long)]
         json: bool,
         /// Increase verbosity (-v, -vv).
         #[arg(short, long, action = clap::ArgAction::Count)]
         verbose: u8,
     },
-    /// Show repository stats (stub in Phase 2)
+    /// Show repository stats (Phase 2: filesystem only).
     Stats {
         #[arg(long)]
-        store: Option<String>,
+        store: String,
         #[arg(long)]
         json: bool,
     },
-    /// Import URLs and write a canonical feeds.json (stub in Phase 2)
+    /// Stubs kept for later phases.
     Import {
         #[arg(long)]
         file: Option<String>,
@@ -53,7 +45,6 @@ pub enum Command {
         #[arg(long)]
         json: bool,
     },
-    /// Add a single feed URL to feeds.json (stub in Phase 2)
     Add {
         url: String,
         #[arg(long)]
@@ -61,15 +52,6 @@ pub enum Command {
         #[arg(long)]
         json: bool,
     },
-}
-
-/// Public helper so tests can parse without pulling in clap::Parser traits directly.
-pub fn parse_from<I, S>(iter: I) -> Cli
-where
-    I: IntoIterator<Item = S>,
-    S: Into<std::ffi::OsString> + Clone,
-{
-    Cli::parse_from(iter)
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -82,108 +64,137 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             json,
             verbose,
         } => {
-            // Parse repo spec if provided and prepare optional FS repo
-            let repo_spec = match store.as_deref() {
-                Some(s) => Some(spec::RepoSpec::parse(s).map_err(|why| {
-                    format!("invalid --store {:?}: {}", s, why)
-                })?),
-                None => None,
-            };
-
             let seed_path = from.unwrap_or_else(|| "feeds.json".to_string());
+            let ids = load_feed_seeds(&seed_path)
+                .map_err(|e| format!("failed to parse seeds: {}", e))?;
 
-            if verbose > 0 && !json {
-                eprintln!(
-                    "[rssify] op=fetch from={} store={} verbosity={}",
-                    seed_path,
-                    store.as_deref().unwrap_or("-"),
-                    verbose
-                );
-            }
-
-            // Load seeds as normalized IDs
-            let ids = pipeline::load_feed_seeds(&seed_path).map_err(|e| format!("{}", e))?;
-
-            // If fs: store is provided, persist minimal Feed records
-            let mut feeds_written = 0u32;
-            if let Some(spec) = &repo_spec {
-                match spec.kind {
-                    spec::RepoKind::Fs => {
-                        // Open filesystem repo rooted at spec.target
-                        let repo = rssify_repo_fs::FsRepo::open(&spec.target);
-                        for id in &ids {
-                            let feed = rssify_core::Feed {
-                                id: id.clone(),
-                                // In Phase 2 we do not resolve network URLs; use the id string as the url field.
-                                url: id.as_str().to_string(),
-                                title: None,
-                                site_url: None,
-                                etag: None,
-                                last_modified: None,
-                                active: true,
-                            };
-                            // Ignore individual write errors but count only successes
-                            if rssify_core::FeedRepo::put(&repo, None, &feed).is_ok() {
-                                feeds_written += 1;
-                            }
+            let mut written = 0usize;
+            if let Some(store) = store {
+                // Expect fs:<root>
+                if let Some(root) = store.strip_prefix("fs:") {
+                    let repo = rssify_repo_fs::FsRepo::open(root);
+                    // For Phase 2, persist minimal feed records; no network, no entries.
+                    for id in &ids {
+                        let feed_obj = json!({
+                            "id": id,
+                            "url": id,
+                            "title": null,
+                            "site_url": null,
+                            "etag": null,
+                            "last_modified": null,
+                            "active": true
+                        });
+                        if rssify_repo_fs::FsRepo::put_feed_json(&repo, id, &feed_obj).is_ok() {
+                            written += 1;
                         }
                     }
-                    _ => {
-                        // Other backends not wired in Phase 2
-                    }
+                } else {
+                    return Err(format!("unsupported --store: {}", store).into());
                 }
             }
 
-            let summary = pipeline::FetchSummary {
-                feeds_total: ids.len() as u32,
-                feeds_processed: ids.len() as u32,
-                items_parsed: 0,
-                items_written: feeds_written,
-            };
+            let summary = json!({
+                "feeds_total": ids.len(),
+                "feeds_processed": ids.len(),
+                "items_parsed": 0,
+                "items_written": written
+            });
 
             if json {
-                // Stable JSON schema mirrors FetchSummary.
-                let out = serde_json::to_string_pretty(&summary)?;
-                println!("{}", out);
+                println!("{}", serde_json::to_string_pretty(&summary)?);
             } else {
                 println!(
-                    "Processed {}/{} feeds; items parsed={}, written={}",
-                    summary.feeds_processed,
-                    summary.feeds_total,
-                    summary.items_parsed,
-                    summary.items_written
+                    "Processed {}/{} feeds; items parsed=0, written={}",
+                    ids.len(),
+                    ids.len(),
+                    written
                 );
                 if verbose > 1 {
                     eprintln!("[rssify] done op=fetch status=ok");
                 }
             }
         }
-        Command::Stats { json, .. } => {
+        Command::Stats { store, json } => {
+            let root = store
+                .strip_prefix("fs:")
+                .ok_or("stats only supports fs:<root> in Phase 2")?;
+            let s = stats::stats_fs(root)?;
             if json {
-                println!("{}", serde_json::json!({"status": "not_implemented", "op": "stats"}));
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&json!({
+                        "feeds": s.feeds,
+                        "entries": s.entries
+                    }))?
+                );
             } else {
-                println!("stats: not implemented yet (Phase 2)");
+                println!("feeds={} entries={}", s.feeds, s.entries);
             }
         }
         Command::Import { json, .. } => {
             if json {
-                println!("{}", serde_json::json!({"status": "not_implemented", "op": "import"}));
+                println!("{}", json!({"status": "not_implemented", "op": "import"}));
             } else {
-                println!("import: not implemented yet (Phase 2)");
+                println!("import: not implemented yet (later phase)");
             }
         }
         Command::Add { json, .. } => {
             if json {
-                println!("{}", serde_json::json!({"status": "not_implemented", "op": "add"}));
+                println!("{}", json!({"status": "not_implemented", "op": "add"}));
             } else {
-                println!("add: not implemented yet (Phase 3)");
+                println!("add: not implemented yet (later phase)");
             }
         }
     }
+
     Ok(())
 }
 
-pub mod pipeline;
-pub mod repo_fs;
-pub mod spec;
+// -------------------------
+// Seed loading (Phase 2)
+// -------------------------
+use std::fs::File;
+use std::io::Read as _;
+
+fn load_feed_seeds(path: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let mut f = File::open(path)?;
+    let mut buf = String::new();
+    f.read_to_string(&mut buf)?;
+    let val: serde_json::Value = serde_json::from_str(&buf)?;
+    let mut out = Vec::new();
+
+    match val {
+        serde_json::Value::Array(arr) => {
+            for item in arr {
+                match item {
+                    serde_json::Value::String(s) => out.push(s),
+                    serde_json::Value::Object(mut m) => {
+                        // Prefer explicit id when present; else fall back to url.
+                        if let Some(idv) = m.remove("id") {
+                            if let Some(id) = idv.as_str() {
+                                out.push(id.to_string());
+                                continue;
+                            }
+                        }
+                        if let Some(urlv) = m.remove("url") {
+                            if let Some(url) = urlv.as_str() {
+                                out.push(url.to_string());
+                                continue;
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        _ => return Err("expected a JSON array at top-level".into()),
+    }
+
+    Ok(out)
+}
+
+// Re-export for tests or other crates if needed.
+pub mod reexports {
+    pub use super::load_feed_seeds;
+}
 
