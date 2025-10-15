@@ -6,6 +6,11 @@ Invariants:
 - Filenames are derived only from canonical ID strings (FeedId/EntryId::as_str).
 - Path components are URL-safe via a local percent-encoder.
 - No filesystem access; string building only.
+
+Layout expected by tests:
+  <root>/feeds/<feed>/feed.json
+  <root>/feeds/<feed>/last_blob.bin
+  <root>/feeds/<feed>/entries/<entry>.json
 */
 
 #![allow(dead_code)]
@@ -43,14 +48,17 @@ fn join_to_string(parts: &[&str]) -> String {
 pub struct FsPaths;
 
 impl FsPaths {
+    /// <root>/feeds/<feed_id>
     pub fn feed_dir(root: &str, feed: &FeedId) -> String {
         join_to_string(&[root, "feeds", &urlsafe_component(feed.as_str())])
     }
 
+    /// <root>/feeds/<feed_id>/feed.json
     pub fn feed_json(root: &str, feed: &FeedId) -> String {
         join_to_string(&[&Self::feed_dir(root, feed), "feed.json"])
     }
 
+    /// Deprecated in tests (kept for completeness): <root>/entries/by_id/<entry>.json
     pub fn entry_id_file(root: &str, entry: &EntryId) -> String {
         join_to_string(&[
             root,
@@ -60,10 +68,15 @@ impl FsPaths {
         ])
     }
 
+    /// <root>/feeds/<feed_id>/entries
     pub fn entry_by_feed_dir(root: &str, feed: &FeedId) -> String {
-        join_to_string(&[root, "entries", "by_feed", &urlsafe_component(feed.as_str())])
+        join_to_string(&[
+            &Self::feed_dir(root, feed),
+            "entries",
+        ])
     }
 
+    /// <root>/feeds/<feed_id>/entries/<entry_id>.json
     pub fn entry_by_feed_file(root: &str, feed: &FeedId, entry: &EntryId) -> String {
         join_to_string(&[
             &Self::entry_by_feed_dir(root, feed),
@@ -71,14 +84,16 @@ impl FsPaths {
         ])
     }
 
+    /// <root>/feeds/<feed_id>/last_blob.bin
     pub fn last_blob(root: &str, feed: &FeedId) -> String {
-        Self::schedule_last_ok(root, feed)
+        join_to_string(&[
+            &Self::feed_dir(root, feed),
+            "last_blob.bin",
+        ])
     }
 
-    pub fn schedule_last_ok(root: &str, feed: &FeedId) -> String {
-        join_to_string(&[root, "schedule", &urlsafe_component(feed.as_str()), "last_ok.txt"])
-    }
-
+    /// Alias used by tests for the entry path.
+    /// <root>/feeds/<feed_id>/entries/<entry_id>.json
     pub fn entry_json(root: &str, feed: &FeedId, entry: &EntryId) -> String {
         Self::entry_by_feed_file(root, feed, entry)
     }
