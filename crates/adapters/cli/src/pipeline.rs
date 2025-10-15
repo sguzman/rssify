@@ -36,7 +36,7 @@ pub struct FeedMetaDelta {
 }
 
 /// Test-facing: persistence counters for a single feed operation.
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct PersistStats {
     pub feed: FeedId,
     pub items_written: u32,
