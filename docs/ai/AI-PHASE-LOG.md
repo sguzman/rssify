@@ -43,3 +43,10 @@ Follow-ups:
 - Ensured the test resides under `crates/core/test/`.
 - Action: delete any legacy files under `crates/core/tests/` to avoid Cargo discovering stale tests.
 
+## Phase 2 - T6 Document schemas and selection surface (2025-10-15)
+
+- Added docs/REPOSITORIES.md describing the --store selection surface, fs layout, and sqlite DDL v1.
+- Documented encoding rules for on-disk IDs and provided example JSON records.
+- Included CLI usage examples for human and JSON modes.
+- Noted error shapes and initial versioning policy (repo_version = 1).
+
