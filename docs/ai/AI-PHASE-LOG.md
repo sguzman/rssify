@@ -12,9 +12,8 @@
 
 ## Phase 2 - T3 Feeds loader and stub fetch (2025-10-15)
 - Implemented crates/adapters/cli/src/pipeline.rs with:
-  - PipelineError, FetchSummary
+  - PipelineError, FetchSummary, plus placeholder types FeedSeed, FeedMetaDelta, PersistStats
   - load_feed_seeds(path) and fetch_from_file(path)
 - Added integration tests in crates/adapters/cli/tests/pipeline_fetch.rs
 - No network or writes; no new dependencies.
-- Next: T4 logging facade; T5 dummy fetcher trait adapter; T6 minimal parser; T7 persist stub.
 

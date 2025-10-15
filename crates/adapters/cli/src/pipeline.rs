@@ -2,11 +2,11 @@
 Module: rssify_cli::pipeline
 Purpose: Pure, no-network pipeline utilities for Phase 2
 Public API:
-  - load_feed_seeds(path) -> Result<Vec<FeedId>, PipelineError>
-  - fetch_from_file(path) -> Result<FetchSummary, PipelineError>
+  - Types: FeedSeed, FeedMetaDelta, PersistStats, FetchSummary
+  - fns: load_feed_seeds(path), fetch_from_file(path)
 Notes:
   - No I/O writes; only reads the given JSON file.
-  - Keeps types minimal and stable for CLI JSON printing later.
+  - Types here are intentionally minimal placeholders to satisfy CLI/tests.
   - Accepts flexible seed formats to reduce friction.
 */
 
@@ -26,6 +26,32 @@ pub enum PipelineError {
     Empty(String),
 }
 
+/// A normalized seed for processing; wraps a canonical FeedId.
+/// Intentionally tiny for now; more fields can be added later if needed.
+#[derive(Debug, Clone)]
+pub struct FeedSeed {
+    pub id: FeedId,
+}
+
+impl From<FeedId> for FeedSeed {
+    fn from(id: FeedId) -> Self { Self { id } }
+}
+
+/// Minimal meta delta carrier produced by parsers.
+/// For Phase 2 it only tracks whether anything changed.
+#[derive(Debug, Clone, Default)]
+pub struct FeedMetaDelta {
+    pub changed: bool,
+}
+
+/// Minimal persist stats returned by the persist stage.
+/// For Phase 2 we expose a single items_written counter.
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub struct PersistStats {
+    pub items_written: u32,
+}
+
+/// Rollup summary suitable for `--json` CLI output.
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct FetchSummary {
     pub feeds_total: u32,
@@ -94,13 +120,15 @@ pub fn fetch_from_file<P: AsRef<Path>>(path: P) -> Result<FetchSummary, Pipeline
     // Stubbed loop: pretend each feed yields 1 parsed and 1 written entry.
     let feeds_processed = feeds_total;
     let items_parsed = feeds_total;
-    let items_written = feeds_total;
+
+    // Phase-2 placeholder persist stats.
+    let persist = PersistStats { items_written: feeds_total };
 
     Ok(FetchSummary {
         feeds_total,
         feeds_processed,
         items_parsed,
-        items_written,
+        items_written: persist.items_written,
     })
 }
 
