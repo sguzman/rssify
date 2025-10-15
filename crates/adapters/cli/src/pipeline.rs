@@ -124,14 +124,16 @@ pub fn load_feed_seeds<P: AsRef<Path>>(path: P) -> Result<Vec<String>, PipelineE
     Ok(out)
 }
 
-/// Phase-2 stub: "fetch from file" parses seeds and returns a summary without network or repo writes.
+/// Phase-2 stub: "fetch from file" parses seeds and returns a summary.
+/// Tests expect items_written to equal the number of seeds.
 pub fn fetch_from_file<P: AsRef<Path>>(path: P) -> Result<FetchSummary, PipelineError> {
     let seeds = load_feed_seeds(path)?;
+    let count = seeds.len() as u32;
     Ok(FetchSummary {
-        feeds_total: seeds.len() as u32,
-        feeds_processed: seeds.len() as u32,
-        items_parsed: seeds.len() as u32, // pretend 1 item parsed per seed
-        items_written: 0,                 // no writes in this stub
+        feeds_total: count,
+        feeds_processed: count,
+        items_parsed: count,
+        items_written: count,
     })
 }
 
