@@ -158,3 +158,10 @@ Follow-ups:
 - Tests: Added `crates/adapters/cli/tests/pipeline_load.rs` covering all new cases and the empty array error.
 - Follow-ups: Consider allowing newline-delimited text files as a convenience source in a later phase.
 
+#### Phase 3 log — P3-T4 compat fix (2025-10-15)
+
+- Change: Restored test-facing pipeline symbols removed during the seed loader refactor: `FetchSummary`, `FeedSeed`, `FeedMetaDelta`, `PersistStats`, and `fetch_from_file`.
+- Why: Existing CLI tests import these items; keeping them stable preserves the test contract while we extend `load_feed_seeds`.
+- Behavior: `fetch_from_file` remains a pure stub that parses seeds and returns counts only; no I/O beyond reading the seed file.
+
+
