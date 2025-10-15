@@ -148,3 +148,20 @@ Follow-ups:
   - Common keys: `ts`, `level`, `component=cli`, `op`, plus contextual pairs like `feeds` and `written`.
 - Follow-ups: Consider promoting the logger to a shared tiny crate if other adapters need it; add a `--quiet` that suppresses info lines even when `-v` is set.
 
+### Phase 3 log — P3-T4 (2025-10-15)
+
+- Change: `pipeline::load_feed_seeds` now accepts three input shapes:
+  1) array of strings,
+  2) array of objects with id/url/guid (prefers id),
+  3) object with `seeds` containing either of the above.
+- Why: Make the CLI tolerant to common fixture formats and improve error clarity.
+- Tests: Added `crates/adapters/cli/tests/pipeline_load.rs` covering all new cases and the empty array error.
+- Follow-ups: Consider allowing newline-delimited text files as a convenience source in a later phase.
+
+#### Phase 3 log — P3-T4 compat fix (2025-10-15)
+
+- Change: Restored test-facing pipeline symbols removed during the seed loader refactor: `FetchSummary`, `FeedSeed`, `FeedMetaDelta`, `PersistStats`, and `fetch_from_file`.
+- Why: Existing CLI tests import these items; keeping them stable preserves the test contract while we extend `load_feed_seeds`.
+- Behavior: `fetch_from_file` remains a pure stub that parses seeds and returns counts only; no I/O beyond reading the seed file.
+
+
