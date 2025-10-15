@@ -174,3 +174,9 @@ Follow-ups:
 - Tests: Added `store_env.rs` to verify precedence and fallback behavior.
 - Follow-ups: Consider supporting a project-local config file for defaults in later phases.
 
+#### Phase 3 log — P3-T5 follow-up (2025-10-15)
+
+- Change: Removed inline tests from `src/store.rs` to comply with the "no tests in src" rule.
+- Change: Added `resolve_store_spec_with_env(getter, flag)` so tests can inject a fake environment; `resolve_store_spec` now delegates to it.
+- Why: Avoid mutating process environment in tests and keep unit tests outside `src/`.
+

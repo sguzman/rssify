@@ -1,33 +1,38 @@
 /*
 Module: rssify_cli::tests::store_env
-Purpose: Verify precedence for repo resolution: flag > env > default.
+Purpose: Verify precedence for repo resolution without mutating the process environment.
 */
 
 #[path = "../src/store.rs"]
 mod store;
 
-use store::{resolve_store_spec, ENV_REPO};
+use store::{resolve_store_spec_with_env, ENV_REPO};
 
 #[test]
 fn precedence_flag_over_env() {
-    std::env::set_var(ENV_REPO, "fs:/env");
-    let got = resolve_store_spec(Some("fs:/flag".to_string()));
+    let got = resolve_store_spec_with_env(
+        |_k| Some("fs:/env".to_string()),
+        Some("fs:/flag".to_string()),
+    );
     assert_eq!(got, "fs:/flag");
-    std::env::remove_var(ENV_REPO);
 }
 
 #[test]
 fn precedence_env_over_default() {
-    std::env::set_var(ENV_REPO, "fs:/env");
-    let got = resolve_store_spec(None);
+    let got = resolve_store_spec_with_env(|k| {
+        if k == ENV_REPO { Some("fs:/env".to_string()) } else { None }
+    }, None);
     assert_eq!(got, "fs:/env");
-    std::env::remove_var(ENV_REPO);
 }
 
 #[test]
-fn default_when_none_and_no_env() {
-    std::env::remove_var(ENV_REPO);
-    let got = resolve_store_spec(None);
+fn default_when_neither_present() {
+    let got = resolve_store_spec_with_env(|_| None, None);
     assert_eq!(got, "fs:.");
 }
 
+#[test]
+fn empty_env_ignored() {
+    let got = resolve_store_spec_with_env(|_| Some("".to_string()), None);
+    assert_eq!(got, "fs:.");
+}
