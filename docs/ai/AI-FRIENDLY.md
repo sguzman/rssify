@@ -27,6 +27,7 @@ This guide defines an iteration loop and repo/file conventions that make AI agen
 - Logging: structured logs with a stable set of keys; no println.
 - Time and randomness are injected via traits so tests can control them.
 - Testing placement (universal rule): Do not put test cases in the same file as regular source. All crate-local tests must live under test/ of their respective crate.
+- DO NOT PUT TESTS UNDER src/
 
 ---
 
