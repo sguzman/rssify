@@ -1,10 +1,9 @@
 //// File: crates/adapters/cli/src/main.rs
-//// Role: CLI entrypoint; uses pipeline, repo_fs, stats, and spec (pure parsing).
-
+//// Role: CLI entrypoint; uses pipeline, repo_fs, stats, spec, and a minimal logger.
 // Contract:
 // Purpose: Parse CLI args and dispatch to simple adapter functions; no business logic.
-// Inputs/Outputs: Reads flags/subcommands via clap; prints user-facing output (text or JSON).
-// Invariants: Repo selection is parsed via spec::RepoSpec; only fs backend is supported in this phase.
+// Inputs/Outputs: Reads flags/subcommands via clap; prints user-facing output (text or JSON) to stdout.
+// Invariants: Repo selection is parsed via spec::RepoSpec; only fs backend is supported in this phase. Logs go to stderr.
 // Examples: `rssify fetch --from feeds.json --store fs:./data --json`
 // Task: Keep under 300 LOC; split if orchestration grows. No tests in this file (tests live under test/).
 
@@ -16,6 +15,9 @@ pub mod pipeline;
 pub mod repo_fs;
 pub mod stats;
 pub mod spec;
+pub mod log;
+
+use log::{LogLevel, Logger};
 
 #[derive(Debug, Parser)]
 #[command(name = "rssify", version, about = "RSS toolkit CLI")]
@@ -82,9 +84,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match cli.command {
         Command::Fetch { from, store, json, verbose } => {
+            let log = Logger::new(LogLevel::from_verbosity(verbose));
+            log.info("fetch_start", &[
+                ("from", from.as_deref().unwrap_or("feeds.json")),
+                ("store", store.as_deref().unwrap_or("none")),
+            ]);
+
             let seed_path = from.unwrap_or_else(|| "feeds.json".to_string());
-            let ids = pipeline::load_feed_seeds(&seed_path)
-                .map_err(|e| format!("failed to parse seeds: {}", e))?;
+            let ids = match pipeline::load_feed_seeds(&seed_path) {
+                Ok(v) => v,
+                Err(e) => {
+                    Logger::new(LogLevel::Error).error("fetch_parse_error", &[("error", format!("{}", e))]);
+                    return Err(format!("failed to parse seeds: {}", e).into());
+                }
+            };
 
             // Open repo when provided and supported; use RepoSpec parsing.
             let mut written = 0usize;
@@ -94,9 +107,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 match spec.kind {
                     spec::RepoKind::Fs => {
-                        // For fs, target is the repo root path.
                         let repo = rssify_repo_fs::FsRepo::open(&spec.target);
-                        // Use rssify_core types and traits
                         use rssify_core::{Feed, FeedId, FeedRepo};
                         for id in &ids {
                             let fid = FeedId::new(id.clone());
@@ -113,9 +124,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 written += 1;
                             }
                         }
+                        log.debug("fetch_persist_done", &[("written", written), ("feeds", ids.len())]);
                     }
-                    // Future adapters (e.g., sqlite) are parsed but not supported yet.
                     other => {
+                        Logger::new(LogLevel::Error).error("fetch_repo_unsupported", &[("kind", other.as_str())]);
                         return Err(format!("repo kind '{}' is not supported in this phase", other.as_str()).into());
                     }
                 }
@@ -137,13 +149,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     ids.len(),
                     written
                 );
-                if verbose > 1 {
-                    eprintln!("[rssify] component=adapter.cli op=fetch status=ok items={} ", written);
-                }
             }
+
+            log.info("fetch_done", &[("feeds", ids.len()), ("written", written)]);
         }
         Command::Stats { store, json } => {
-            // Default to filesystem repo at current directory when not provided.
+            // For stats, default logger level is Warn (no verbosity flag).
+            let log = Logger::new(LogLevel::Warn);
+
             let spec_str = store.unwrap_or_else(|| "fs:.".to_string());
             let spec = spec::RepoSpec::from_str(&spec_str)
                 .map_err(|e| format!("invalid --store: {} ({})", spec_str, e))?;
@@ -162,8 +175,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     } else {
                         println!("feeds={} entries={}", s.feeds, s.entries);
                     }
+                    log.info("stats_done", &[("feeds", s.feeds), ("entries", s.entries)]);
                 }
                 other => {
+                    Logger::new(LogLevel::Error).error("stats_repo_unsupported", &[("kind", other.as_str())]);
                     return Err(format!("repo kind '{}' is not supported in this phase", other.as_str()).into());
                 }
             }
@@ -174,6 +189,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 println!("import: not implemented yet (later phase)");
             }
+            Logger::new(LogLevel::Warn).warn("import_stub", &[("status", "not_implemented")]);
         }
         Command::Add { json, .. } => {
             if json {
@@ -181,9 +197,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 println!("add: not implemented yet (later phase)");
             }
+            Logger::new(LogLevel::Warn).warn("add_stub", &[("status", "not_implemented")]);
         }
     }
 
     Ok(())
 }
-
