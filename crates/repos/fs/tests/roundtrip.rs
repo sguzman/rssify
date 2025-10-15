@@ -1,14 +1,17 @@
-// File: crates/repos/fs/test/roundtrip.rs
-// Purpose: Round-trip tests for FsRepo implementing core repo traits.
-// Inputs: FsRepo; rssify_core domain types and traits.
-// Outputs: Asserts on RepoError results; creates temp dirs.
-// Side effects: Filesystem I/O in a tempdir.
-// Invariants:
-//  - Tests do not depend on external network.
-//  - Each test uses a fresh temp directory.
-// Tests: This file.
+/*
+File: crates/repos/fs/test/roundtrip.rs
+Purpose: Round-trip tests for FsRepo implementing core repo traits.
+Inputs: FsRepo; rssify_core domain types and traits.
+Outputs: Asserts on RepoError results; creates temp dirs.
+Side effects: Filesystem I/O in a tempdir.
+Invariants:
+ - Tests do not depend on external network.
+ - Each test uses a fresh temp directory.
+*/
 
-use rssify_core::{ContentBlob, ContentKind, Entry, EntryId, EntryRepo, Feed, FeedId, FeedRepo, ScheduleRepo, Tx};
+use rssify_core::{
+    ContentBlob, ContentKind, Entry, EntryId, EntryRepo, Feed, FeedId, FeedRepo, ScheduleRepo,
+};
 use rssify_repo_fs::FsRepo;
 
 fn temp_root() -> tempfile::TempDir {
@@ -38,13 +41,13 @@ fn feed_roundtrip_and_list() {
         active: true,
     };
     let tx = repo.begin_tx();
-    repo.put(Some(&tx), &f1).unwrap();
-    repo.put(Some(&tx), &f2).unwrap();
+    FeedRepo::put(&repo, Some(&tx), &f1).expect("put f1");
+    FeedRepo::put(&repo, Some(&tx), &f2).expect("put f2");
 
-    let got = repo.get(None, &f1.id).unwrap();
+    let got = FeedRepo::get(&repo, None, &f1.id).expect("get f1");
     assert_eq!(got.url, f1.url);
 
-    let list = repo.list(None).unwrap();
+    let list = FeedRepo::list(&repo, None).expect("list feeds");
     assert_eq!(list.len(), 2);
 }
 
@@ -61,7 +64,7 @@ fn entry_roundtrip_and_scan() {
         last_modified: None,
         active: true,
     };
-    repo.put(None, &feed).unwrap();
+    FeedRepo::put(&repo, None, &feed).expect("put feed");
 
     let e1 = Entry {
         id: EntryId::from_parts(&feed.id, Some("guid-1"), None, Some("A"), Some(10)),
@@ -71,10 +74,19 @@ fn entry_roundtrip_and_scan() {
         published_ts: Some(10),
         updated_ts: None,
         summary: None,
-        content: Some(ContentBlob { kind: ContentKind::Xml, bytes: b"<xml/>".to_vec() }),
+        content: Some(ContentBlob {
+            kind: ContentKind::Xml,
+            bytes: b"<xml/>".to_vec(),
+        }),
     };
     let e2 = Entry {
-        id: EntryId::from_parts(&feed.id, None, Some("https://ex.com/b"), Some("B"), Some(20)),
+        id: EntryId::from_parts(
+            &feed.id,
+            None,
+            Some("https://ex.com/b"),
+            Some("B"),
+            Some(20),
+        ),
         feed: feed.id.clone(),
         url: Some("https://ex.com/b".into()),
         title: Some("B".into()),
@@ -84,14 +96,14 @@ fn entry_roundtrip_and_scan() {
         content: None,
     };
 
-    repo.upsert(None, &e1).unwrap();
-    repo.upsert(None, &e1).unwrap(); // idempotent
-    repo.upsert(None, &e2).unwrap();
+    EntryRepo::upsert(&repo, None, &e1).expect("upsert e1");
+    EntryRepo::upsert(&repo, None, &e1).expect("upsert e1 again (idempotent)");
+    EntryRepo::upsert(&repo, None, &e2).expect("upsert e2");
 
-    let got = repo.get(None, &e1.id).unwrap();
+    let got = EntryRepo::get(&repo, None, &e1.id).expect("get e1");
     assert_eq!(got.title.as_deref(), Some("A"));
 
-    let list = repo.list_by_feed(None, &feed.id).unwrap();
+    let list = EntryRepo::list_by_feed(&repo, None, &feed.id).expect("list entries by feed");
     assert_eq!(list.len(), 2);
     assert_eq!(list[0].id, e1.id);
     assert_eq!(list[1].id, e2.id);
@@ -102,8 +114,14 @@ fn schedule_record_and_read() {
     let root = temp_root();
     let repo = FsRepo::new(root.path());
     let feed = FeedId::from_url("https://ex.com/rss");
-    assert_eq!(repo.last_ok_fetch_ts(None, &feed).unwrap(), None);
-    repo.record_fetch_ts(None, &feed, 12345).unwrap();
-    assert_eq!(repo.last_ok_fetch_ts(None, &feed).unwrap(), Some(12345));
+    assert_eq!(
+        ScheduleRepo::last_ok_fetch_ts(&repo, None, &feed).expect("none yet"),
+        None
+    );
+    ScheduleRepo::record_fetch_ts(&repo, None, &feed, 12345).expect("record ts");
+    assert_eq!(
+        ScheduleRepo::last_ok_fetch_ts(&repo, None, &feed).expect("read ts"),
+        Some(12345)
+    );
 }
 
