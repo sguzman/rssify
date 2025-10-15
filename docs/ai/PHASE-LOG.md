@@ -138,3 +138,13 @@ Follow-ups:
 - Why: Align stats with the documented FS layout and `FsPaths` helpers; preserve backward compatibility with earlier fixtures.
 - Follow-ups: Consider per-feed entry breakdown and size metrics; once legacy paths are fully removed, drop the fallback scan for `entries/by_id`.
 
+### Phase 3 log — P3-T3 (2025-10-15)
+
+- Change: Introduced a tiny structured logger in `crates/adapters/cli/src/log.rs` and routed CLI traces through it.
+- Why: Comply with AI-FRIENDLY rule to avoid ad-hoc println-based logging and standardize key=value logs. This adds no external dependencies.
+- Behavior:
+  - Logs always go to stderr; stdout remains reserved for user-facing output or `--json`.
+  - Verbosity mapping: default warn; `-v` sets info; `-vv` sets debug.
+  - Common keys: `ts`, `level`, `component=cli`, `op`, plus contextual pairs like `feeds` and `written`.
+- Follow-ups: Consider promoting the logger to a shared tiny crate if other adapters need it; add a `--quiet` that suppresses info lines even when `-v` is set.
+
