@@ -95,3 +95,13 @@ Follow-ups:
 - Extend stats with per-feed entry counts and size metrics.
 - Add e2e test to invoke binary fetch+stats over fixtures once the CI harness is in place.
 
+## Phase 2 - follow up
+
+- Split repo code into modules:
+  - lib.rs: thin module hub (pub use FsRepo and utilities).
+  - repo.rs: FsRepo struct and all repo operations (paths, put/get/list, schedule).
+  - util.rs: escape_id/unescape_id and atomic write helpers.
+- Fixed a compile error in unescape_id and corrected CLI to call repo.put_feed_json(...).
+- Outcome: smaller files, clearer responsibilities, clean build.
+
+

@@ -1,3 +1,4 @@
+
 //// File: crates/adapters/cli/src/main.rs
 //// Purpose: CLI entrypoint with Phase 2 wiring for fetch and stats (filesystem-only).
 use clap::{Parser, Subcommand};

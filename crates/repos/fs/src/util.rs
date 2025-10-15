@@ -1,67 +1,91 @@
-// File: crates/repos/fs/src/util.rs
-// Purpose: Shared FS helpers and simple escaping.
-// Inputs: serde for JSON, std::fs and std::io.
-// Outputs: small utility functions used by repo impls.
-// Side effects: Filesystem I/O.
+//// File: crates/repos/fs/src/util.rs
+//// Role: Safe ID escaping and atomic write utilities shared by repo code.
 
-use rssify_core::RepoError;
-use serde::{de::DeserializeOwned, Serialize};
 use std::fs;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::Path;
 
-pub fn ensure_parent(path: &Path) -> Result<(), RepoError> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|e| RepoError::Backend(e.to_string()))?;
+/// Escape an id into a filesystem-safe string:
+/// - ASCII alnum, '-' and '_' pass through
+/// - everything else becomes _XX (lower-hex)
+pub fn escape_id(id: &str) -> String {
+    let mut out = String::with_capacity(id.len());
+    for b in id.bytes() {
+        let c = b as char;
+        if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+            out.push(c);
+        } else {
+            out.push('_');
+            out.push(hex(b >> 4));
+            out.push(hex(b & 0x0F));
+        }
     }
-    Ok(())
+    out
 }
 
-pub fn write_atomic_json<T: Serialize>(path: &Path, value: &T) -> Result<(), RepoError> {
-    ensure_parent(path)?;
+/// Best-effort reverse of escape_id (for presentation only).
+pub fn unescape_id(s: &str) -> String {
+    let bytes = s.as_bytes();
+    let mut out: Vec<u8> = Vec::with_capacity(bytes.len());
+    let mut i = 0usize;
+    while i < bytes.len() {
+        if bytes[i] == b'_' && i + 2 < bytes.len() {
+            if let (Some(h), Some(l)) = (unhex(bytes[i + 1]), unhex(bytes[i + 2])) {
+                out.push((h << 4) | l);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).to_string()
+}
+
+fn hex(n: u8) -> char {
+    match n {
+        0..=9 => (b'0' + n) as char,
+        10..=15 => (b'a' + (n - 10)) as char,
+        _ => '?',
+    }
+}
+
+fn unhex(b: u8) -> Option<u8> {
+    match b {
+        b'0'..=b'9' => Some(b - b'0'),
+        b'a'..=b'f' => Some(10 + b - b'a'),
+        b'A'..=b'F' => Some(10 + b - b'A'),
+        _ => None,
+    }
+}
+
+/// Atomic write of a JSON value to `path`.
+pub fn write_json_atomic(path: &Path, value: &serde_json::Value) -> std::io::Result<()> {
+    if let Some(dir) = path.parent() {
+        fs::create_dir_all(dir)?;
+    }
     let tmp = path.with_extension("json.tmp");
     {
-        let mut f = fs::File::create(&tmp).map_err(|e| RepoError::Backend(e.to_string()))?;
-        let data = serde_json::to_vec_pretty(value).map_err(|e| RepoError::Ser(e.to_string()))?;
-        f.write_all(&data)
-            .map_err(|e| RepoError::Backend(e.to_string()))?;
-        let _ = f.sync_all();
+        let mut f = fs::File::create(&tmp)?;
+        let s = serde_json::to_string_pretty(value)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+        f.write_all(s.as_bytes())?;
+        f.sync_all()?;
     }
-    fs::rename(&tmp, path).map_err(|e| RepoError::Backend(e.to_string()))?;
-    Ok(())
+    fs::rename(tmp, path)
 }
 
-pub fn read_json<T: DeserializeOwned>(path: &Path) -> Result<T, RepoError> {
-    let mut f = fs::File::open(path).map_err(|_| RepoError::NotFound)?;
-    let mut buf = Vec::new();
-    f.read_to_end(&mut buf)
-        .map_err(|e| RepoError::Backend(e.to_string()))?;
-    serde_json::from_slice(&buf).map_err(|e| RepoError::Ser(e.to_string()))
-}
-
-pub fn write_atomic_text(path: &Path, text: &str) -> Result<(), RepoError> {
-    ensure_parent(path)?;
+/// Atomic write of UTF-8 text to `path`.
+pub fn write_text_atomic(path: &Path, text: &str) -> std::io::Result<()> {
+    if let Some(dir) = path.parent() {
+        fs::create_dir_all(dir)?;
+    }
     let tmp = path.with_extension("tmp");
     {
-        let mut f = fs::File::create(&tmp).map_err(|e| RepoError::Backend(e.to_string()))?;
-        f.write_all(text.as_bytes())
-            .map_err(|e| RepoError::Backend(e.to_string()))?;
-        let _ = f.sync_all();
+        let mut f = fs::File::create(&tmp)?;
+        f.write_all(text.as_bytes())?;
+        f.sync_all()?;
     }
-    fs::rename(&tmp, path).map_err(|e| RepoError::Backend(e.to_string()))?;
-    Ok(())
-}
-
-// Escape an id string to be safe as a directory or file name without extra deps.
-// Rules: '/' and '\' -> '_', ':' -> '-', rest unchanged; trim spaces.
-pub fn escape_id(s: &str) -> String {
-    s.trim()
-        .chars()
-        .map(|c| match c {
-            '/' | '\\' => '_',
-            ':' => '-',
-            _ => c,
-        })
-        .collect()
+    fs::rename(tmp, path)
 }
 
