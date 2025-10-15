@@ -100,7 +100,13 @@ pub fn load_feed_seeds<P: AsRef<Path>>(path: P) -> Result<Vec<FeedId>, PipelineE
     for s in seeds {
         match s {
             Seed::Str(s) => out.push(normalize_id(&s)),
-            Seed::Obj { url: Some(u), .. } => out.push(FeedId::from_url(&u)),
+            // IMPORTANT: Prefer explicit id when both url and id are present.
+            Seed::Obj { url: Some(u), id: Some(id), .. } => {
+                out.push(FeedId::new(&id));
+            }
+            Seed::Obj { url: Some(u), id: None, .. } => {
+                out.push(FeedId::from_url(&u));
+            }
             Seed::Obj { url: None, id: Some(id), .. } => out.push(FeedId::new(&id)),
             Seed::Obj { url: None, id: None, .. } => { /* skip unusable */ }
         }
