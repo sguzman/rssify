@@ -26,7 +26,7 @@ This guide defines an iteration loop and repo/file conventions that make AI agen
 - Error types: one error enum per boundary with stable, documented variants.
 - Logging: structured logs with a stable set of keys; no println.
 - Time and randomness are injected via traits so tests can control them.
-- Testing placement (universal rule): Do not put test cases in the same file as regular source. All crate-local tests must live under src/test/ of their respective crate.
+- Testing placement (universal rule): Do not put test cases in the same file as regular source. All crate-local tests must live under test/ of their respective crate.
 
 ---
 
@@ -36,7 +36,7 @@ This guide defines an iteration loop and repo/file conventions that make AI agen
 
    * Choose or create exactly one file to modify.
    * Add or update the top-of-file header contract (template below).
-   * Write or update 1-3 focused tests the change must pass (tests live in src/test/).
+   * Write or update 1-3 focused tests the change must pass (tests live in test/).
 
 2. Generate once
 
@@ -70,7 +70,7 @@ This guide defines an iteration loop and repo/file conventions that make AI agen
 * One responsibility per file.
 * Prefer descriptive names over explanatory comments.
 * Do not place tests inside regular source files.
-* Place all unit/integration/property tests for a crate under `src/test/`.
+* Place all unit/integration/property tests for a crate under `test/`.
 
 ---
 
@@ -87,6 +87,7 @@ Use a workspace to keep crates small and contexts precise.
 └─ crates/
    ├─ core/
    │  ├─ Cargo.toml
+   │  ├─ test/
    │  └─ src/
    │     ├─ lib.rs
    │     ├─ domain.rs        # traits, pure logic
@@ -95,9 +96,11 @@ Use a workspace to keep crates small and contexts precise.
    └─ adapters/
       ├─ cli/
       │  ├─ Cargo.toml
+      │  ├─ test/
       │  └─ src/main.rs      # uses core traits
       └─ http/
          ├─ Cargo.toml
+         ├─ test/
          └─ src/lib.rs       # HTTP handlers implementing core traits
 ```
 
