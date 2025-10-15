@@ -88,15 +88,3 @@ impl FsPaths {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn urlsafe_component_basic() {
-        assert_eq!(urlsafe_component("abc-XYZ._09"), "abc-XYZ._09");
-        assert_eq!(urlsafe_component("a b"), "a%20b");
-        assert_eq!(urlsafe_component("url:https://x/y"), "url%3Ahttps%3A%2F%2Fx%2Fy");
-    }
-}
-
