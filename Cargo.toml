@@ -13,6 +13,9 @@ keywords = ["rss", "cli"]
 categories = ["rss"]
 readme = "README.md"
 
+[workspace.metadata]
+name = "rssify"
+
 [workspace.metadata.release]
 shared-version = true
 dependent-version = "upgrade"
@@ -32,7 +35,7 @@ pre-release-hook = ["sh", "-c", '''
 
 [workspace.dependencies]
 thiserror = "1"
-clap = { version = "4", features = ["derive"] }
+clap = { version = "4", features = ["derive", "env"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

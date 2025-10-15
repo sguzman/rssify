@@ -1,4 +1,5 @@
-let
-  version = "1.88.0";
+{inputs}: let
+  cargoToml = builtins.fromTOML (builtins.readFile (inputs.self + "/rust-toolchain.toml"));
+  version = cargoToml.toolchain.channel;
 in
   version
