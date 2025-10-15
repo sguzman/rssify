@@ -34,8 +34,10 @@ pub enum Command {
     },
     /// Show repository stats (Phase 2: filesystem only).
     Stats {
+        /// Repository target (defaults to fs:. if omitted).
         #[arg(long)]
-        store: String,
+        store: Option<String>,
+        /// Emit machine-readable JSON.
         #[arg(long)]
         json: bool,
     },
@@ -82,7 +84,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // Use rssify_core types and traits
                     use rssify_core::{Feed, FeedId, FeedRepo};
                     for id in &ids {
-                        // Prefer constructing FeedId via new(); if 'id' is a URL, new() should accept it.
                         let fid = FeedId::new(id.clone());
                         let feed = Feed {
                             id: fid,
@@ -124,6 +125,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         Command::Stats { store, json } => {
+            // Default to current directory repo when not provided.
+            let store = store.unwrap_or_else(|| "fs:.".to_string());
             let root = store
                 .strip_prefix("fs:")
                 .ok_or("stats only supports fs:<root> in Phase 2")?;
