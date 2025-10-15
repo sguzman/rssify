@@ -50,3 +50,18 @@ Follow-ups:
 - Included CLI usage examples for human and JSON modes.
 - Noted error shapes and initial versioning policy (repo_version = 1).
 
+## Phase 2 — Task 7 (Filesystem repository adapter)
+- Added new crate `crates/repos/fs` implementing core repo traits over the filesystem with atomic JSON writes.
+- Storage layout:
+  - feeds/<feed_id_esc>/feed.json
+  - entries/by_id/<entry_id_esc>.json
+  - entries/by_feed/<feed_id_esc>/<entry_id_esc>.json
+  - schedule/<feed_id_esc>/last_ok.txt
+- No new external dependencies; used std + serde/serde_json already in workspace.
+- Added round-trip tests covering feeds, entries, and schedule.
+- Updated workspace members to include the new crate.
+
+Follow-ups:
+- Consider a stronger, percent-encoded escaping or hashed sharding for very long IDs.
+- Add simple metrics (counts, elapsed) once observability scaffolding lands.
+
