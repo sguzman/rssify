@@ -164,4 +164,13 @@ Follow-ups:
 - Why: Existing CLI tests import these items; keeping them stable preserves the test contract while we extend `load_feed_seeds`.
 - Behavior: `fetch_from_file` remains a pure stub that parses seeds and returns counts only; no I/O beyond reading the seed file.
 
+### Phase 3 log — P3-T5 (2025-10-15)
+
+- Change: Unified repo selection defaults across commands.
+  - New precedence: --store flag > RSSIFY_REPO environment variable > fs:. (current directory)
+  - Implemented in `store.rs` with `resolve_store_spec`, used by both `fetch` and `stats`.
+  - Help text now documents the precedence and environment variable.
+- Why: Remove inconsistency between commands and improve ergonomics in scripts and CI.
+- Tests: Added `store_env.rs` to verify precedence and fallback behavior.
+- Follow-ups: Consider supporting a project-local config file for defaults in later phases.
 
