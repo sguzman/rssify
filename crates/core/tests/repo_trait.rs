@@ -8,7 +8,7 @@ use rssify_core::{Entry, EntryId, EntryRepo, Feed, FeedId, FeedRepo, RepoError, 
 
 use std::collections::BTreeMap;
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 struct MemTx {
     active: bool,
 }
@@ -22,10 +22,6 @@ struct MemFeeds {
 }
 impl FeedRepo for MemFeeds {
     type Tx<'a> = MemTx where Self: 'a;
-
-    fn begin<'a>(&'a self) -> Result<Self::Tx<'a>, RepoError> {
-        Ok(MemTx { active: true })
-    }
 
     fn get<'a>(
         &'a self,
@@ -43,11 +39,14 @@ impl FeedRepo for MemFeeds {
         _tx: Option<&'a Self::Tx<'a>>,
         _feed: &Feed,
     ) -> Result<(), RepoError> {
-        // For a real backend this would mutate state; here we only validate callability.
+        // No-op for test: validate callability only.
         Ok(())
     }
 
-    fn list<'a>(&'a self, _tx: Option<&'a Self::Tx<'a>>) -> Result<Vec<Feed>, RepoError> {
+    fn list<'a>(
+        &'a self,
+        _tx: Option<&'a Self::Tx<'a>>,
+    ) -> Result<Vec<Feed>, RepoError> {
         Ok(self.feeds.values().cloned().collect())
     }
 }
@@ -71,6 +70,14 @@ impl EntryRepo for MemEntries {
         _entry: &Entry,
     ) -> Result<(), RepoError> {
         Ok(())
+    }
+
+    fn list_by_feed<'a>(
+        &'a self,
+        _tx: Option<&'a Self::Tx<'a>>,
+        _feed: &FeedId,
+    ) -> Result<Vec<Entry>, RepoError> {
+        Ok(Vec::new())
     }
 }
 
