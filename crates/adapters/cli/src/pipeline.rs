@@ -3,7 +3,7 @@ Module: rssify_cli::pipeline
 Purpose: Pure, no-network pipeline utilities for Phase 2
 Public API:
   - Types:
-      FeedSeed { url, title_hint, id }
+      FeedSeed { url, title_hint }
       FeedMetaDelta { title, site_url, etag, last_modified }
       PersistStats { feed, items_written, elapsed_ms, not_modified, failure_hint }
       FetchSummary { feeds_total, feeds_processed, items_parsed, items_written }
@@ -32,29 +32,13 @@ pub enum PipelineError {
     Empty(String),
 }
 
-/// A normalized seed for processing.
-/// - url: original URL string (if applicable)
+/// A normalized seed for processing as expected by tests.
+/// - url: original URL string (or identifier-like string)
 /// - title_hint: optional human label
-/// - id: canonical FeedId used for storage and logging
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FeedSeed {
     pub url: String,
     pub title_hint: Option<String>,
-    pub id: FeedId,
-}
-
-impl From<FeedId> for FeedSeed {
-    fn from(id: FeedId) -> Self {
-        // Best-effort reconstruction of a display URL; fall back to the ID.
-        let url_guess = if id.as_str().starts_with("http://")
-            || id.as_str().starts_with("https://")
-        {
-            id.as_str().to_string()
-        } else {
-            id.as_str().to_string()
-        };
-        Self { url: url_guess, title_hint: None, id }
-    }
 }
 
 /// Minimal meta delta carrier produced by parsers.
@@ -76,7 +60,7 @@ pub struct PersistStats {
     pub failure_hint: Option<String>,
 }
 
-/// Rollup summary suitable for `--json` CLI output.
+/// Rollup summary suitable for --json CLI output.
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct FetchSummary {
     pub feeds_total: u32,
@@ -87,7 +71,7 @@ pub struct FetchSummary {
 
 /// Supported seed shapes (flexible):
 /// 1) ["https://site/a.xml", "https://site/b.xml"]
-/// 2) [{"url":"https://..."}, {"id":"custom"}]
+/// 2) [{"url":"https://..."}, {"id":"custom"}]  // "id" accepted as alternate to "url"
 #[derive(serde::Deserialize)]
 #[serde(untagged)]
 enum Seed {
@@ -116,12 +100,7 @@ pub fn load_feed_seeds<P: AsRef<Path>>(path: P) -> Result<Vec<FeedId>, PipelineE
     for s in seeds {
         match s {
             Seed::Str(s) => out.push(normalize_id(&s)),
-            Seed::Obj { url: Some(u), id, .. } => {
-                out.push(match id {
-                    Some(id) => FeedId::new(&id),
-                    None => FeedId::from_url(&u),
-                });
-            }
+            Seed::Obj { url: Some(u), .. } => out.push(FeedId::from_url(&u)),
             Seed::Obj { url: None, id: Some(id), .. } => out.push(FeedId::new(&id)),
             Seed::Obj { url: None, id: None, .. } => { /* skip unusable */ }
         }
@@ -141,22 +120,8 @@ pub fn fetch_from_file<P: AsRef<Path>>(path: P) -> Result<FetchSummary, Pipeline
     let seeds = load_feed_seeds(path)?;
     let feeds_total = seeds.len() as u32;
 
-    // Stubbed loop: pretend each feed yields 1 parsed and 1 written entry.
     let feeds_processed = feeds_total;
     let items_parsed = feeds_total;
-
-    // Phase-2 placeholder persist stats derived per feed (not returned here).
-    // Example construction to validate fields compile:
-    // let _stats: Vec<PersistStats> = seeds
-    //     .into_iter()
-    //     .map(|fid| PersistStats {
-    //         feed: fid,
-    //         items_written: 1,
-    //         elapsed_ms: 0,
-    //         not_modified: false,
-    //         failure_hint: None,
-    //     })
-    //     .collect();
 
     Ok(FetchSummary {
         feeds_total,
