@@ -217,3 +217,12 @@ Follow-ups
 - Follow-ups:
   - Sweep any remaining docs or READMEs for the old `test/` wording and update if encountered during future tasks.
 
+### Phase 4 log — P4-T2 (2025-10-15)
+
+- Change: Verified and normalized intra-workspace path dependencies.
+  - `crates/adapters/cli/Cargo.toml` uses `rssify-core = { path = "../../core" }` and `rssify-repo-fs = { path = "../../repos/fs" }`.
+  - `crates/repos/fs/Cargo.toml` uses `rssify-core = { path = "../../core" }` (and mirrors the same in dev-dependencies).
+- Result: No edits required; all paths are already consistent and correct relative to each crate.
+- Why: Consistent relative paths prevent tooling quirks and keep the workspace portable.
+- Follow-ups: None for this task.
+
