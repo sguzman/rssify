@@ -121,6 +121,8 @@ Follow-ups:
 - Added FsTx and begin_tx() to match core::Tx and tests.
 - Centralized JSON IO + ID escaping in util.rs; split files for clarity.
 
+## Phase 3
+
 ### Phase 3 log — P3-T1 (2025-10-15)
 
 - Change: CLI now parses `--store` via `spec::RepoSpec` in `main.rs` for both `fetch` and `stats`.
@@ -129,4 +131,10 @@ Follow-ups:
 - Follow-ups:
   - When a new backend adapter lands (e.g., SQLite), wire its kind here by matching `RepoKind::Sqlite` and constructing the concrete repo.
   - Consider promoting structured logging keys across CLI messages (component, op, items) consistently.
+
+### Phase 3 log — P3-T2 (2025-10-15)
+
+- Change: `rssify stats` now counts entries in the canonical per-feed layout `<root>/feeds/<feed>/entries/*.json`, and also includes legacy `<root>/entries/by_id/*.json`.
+- Why: Align stats with the documented FS layout and `FsPaths` helpers; preserve backward compatibility with earlier fixtures.
+- Follow-ups: Consider per-feed entry breakdown and size metrics; once legacy paths are fully removed, drop the fallback scan for `entries/by_id`.
 
